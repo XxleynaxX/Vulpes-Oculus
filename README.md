@@ -1,300 +1,148 @@
-# 🛡️ Vulpes Oculus
+# Vulpes Oculus
 
-**Vulpes Oculus – Das Zeitalter der Asche** ist eine webbasierte Plattform für ein Conan-Exiles-Rollenspiel.  
-Das Projekt verbindet Charakterverwaltung, Lore, Regeln, Kalender, Events, Wetter, Heilerakten und administrative Werkzeuge in einer gemeinsamen Oberfläche.
+**Vulpes Oculus** is a browser-based roleplay platform: character sheets, wiki, calendar, events, races, professions, gods, creatures, rules, map, weather, healer records, and admin tools.
 
-Was ursprünglich als digitaler Charakterbogen begonnen hat, ist inzwischen zu einer vollständigen RP-Verwaltungs- und Wissensplattform gewachsen.
-
----
-
-## 🌑 Die Welt
-
-Vor mehr als 300 Jahren wurde die alte Welt durch den Krieg der Götter zerstört.
-
-Aus den Überresten entstand eine neue Zeitrechnung, neue Reiche und neue Geschichten.  
-**Vulpes Oculus** dienen dabei als digitales Gedächtnis dieser Welt.
-
-Die Website stellt Wissen, Regeln und Werkzeuge bereit, damit Spieler und Team die gemeinsame RP-Welt übersichtlich verwalten können.
+Stack: HTML / CSS / JavaScript frontend, Node.js proxy, MySQL storage, Discord OAuth and webhooks.
 
 ---
 
-## ✨ Öffentlicher Bereich
+## Features
 
-Die normale Website enthält unter anderem:
+### Public site
+- Home with overview
+- News & Events
+- In-game calendar
+- Wiki & Library
+- Races, Professions, Creatures, Gods
+- Rules
+- Map
+- Character sheet
+- Healer records
+- Fantasy weather
 
-- 🏠 **Startseite** mit Übersicht und aktuellen Informationen
-- 📰 **News** für Neuigkeiten rund um das RP
-- 📜 **Events** und besondere Ereignisse
-- 📅 **Ingame-Kalender**
-- 📖 **Wiki** für Wissen und Hintergrundinformationen
-- 📚 **Bibliothek** für Schriften und Archive
-- 👥 **Völker & Rassen**
-- 🛠️ **Berufe**
-- 🐺 **Kreaturen**
-- 📜 **Regelwerk**
-- ⚜️ **Götter & Kulte**
-- 🗺️ **Karte**
-- 👤 **Charakterbogen**
-- 🩺 **Heilerakte**
-- 🌦️ **Fantasy-Wetter**
+### Admin
+- Dashboard, tasks, projects
+- Character management
+- Player blacklist
+- Activity log
+- Role-based access via Discord
 
-Der administrative Bereich ist bewusst **nicht Bestandteil der öffentlichen Navigation**.
-
----
-
-## 👤 Charakterbogen
-
-Der digitale Charakterbogen bildet die Grundlage des Projekts.
-
-Er unterstützt unter anderem:
-
-- Charakterdaten
-- Völker und Rassen
-- Berufe und Handwerk
-- Aussehen und Merkmale
-- Gesinnung
-- Magie
-- OOC-Hinweise und persönliche Grenzen
-- Ingame-Geburtstage
-- JSON-Import und -Export
-- Charakterdarstellung und Exportfunktionen
+### Discord
+- Login with Discord
+- Webhooks for characters, weather, healer notes, moderation
 
 ---
 
-## 📜 Regelwerk
+## Quick start
 
-Das Regelwerk ist in einzelne Kategorien gegliedert und kann administrativ gepflegt werden.
+### 1. Config
+```bash
+cp config.example.json config.json
+# Fill in MySQL, Discord, webhooks
+```
 
-Jede einzelne Regel kann eine eindeutige Kennung erhalten, zum Beispiel:
+### 2. Frontend (local)
+```bash
+python3 -m http.server 8080
+# Open http://localhost:8080
+```
 
-`R-1-A`  
-`R-1-B`  
-`R-1-C`
+### 3. Proxy (local)
+```bash
+cd vulpesoculus-discord-proxy
+npm install
+export MYSQL_URL="mysql://user:pass@host:3306/vulpes_oculus"
+export DISCORD_CLIENT_ID="..."
+export DISCORD_CLIENT_SECRET="..."
+export AUTH_SECRET="long_random_string_min_32_chars"
+export PUBLIC_URL="http://localhost:3000"
+export ALLOWED_RETURN_ORIGINS="http://localhost:8080"
+npm start
+```
 
-Dadurch können Regelverstöße eindeutig referenziert werden.
+Point the frontend at the proxy (browser console):
+```js
+localStorage.setItem("vulpesoculus_discord_proxy_url", "http://localhost:3000");
+```
 
-Bei der Charakterverwaltung werden diese IDs intern verwendet. In Tabellen und Discord-Meldungen wird dagegen der **eigentliche Regeltext** angezeigt, damit Teammitglieder nicht erst nach der Bedeutung einer ID suchen müssen.
-
----
-
-## 🛡️ Administration
-
-Der Admin-Bereich ist vom öffentlichen Bereich getrennt.
-
-Dort befinden sich unter anderem:
-
-- 📊 Dashboard
-- 📝 Aufgaben
-- 📁 Projekte
-- 🛡️ Charakterverwaltung
-- 🚫 Spieler-Blacklist
-- 📜 Aktivitäten
-- Charakterbögen und laufende Charakter-IDs
-- Verwarnungen und Regelverstöße
-- administrative Notizen
-- weitere Verwaltungsbereiche
-
-Administrative Funktionen werden nur nach entsprechender Anmeldung bzw. Berechtigung zugänglich gemacht.
-
-Die öffentliche Navigation enthält **keinen direkten Admin-Link**.
+Or set `DEFAULT_PROXY` in `vulpesoculus-storage.js`.
 
 ---
 
-## 👥 Charakterverwaltung
+## Deploy
 
-Die Charakterverwaltung ermöglicht dem Team unter anderem:
+| Part | Suggested host |
+|------|----------------|
+| Frontend | GitHub Pages, Netlify, Vercel |
+| Proxy | Render, Railway, VPS |
+| Database | MySQL / MariaDB (any provider) |
 
-- laufende Charakter-IDs
-- Charaktername und Spieler
-- Steam-ID
-- Volk/Rasse
-- Verwarnungen
-- Status
-- Regelverstöße
-- interne Notizen
-- Bearbeiten und Löschen von Charaktereinträgen
+**Proxy (Render example)**  
+- Root directory: `vulpesoculus-discord-proxy`  
+- Build: `npm install`  
+- Start: `npm start`  
+- Set environment variables from `config.example.json`  
+- Set `PUBLIC_URL` to the proxy URL  
 
-Bei einem Regelverstoß können mehrere Regel-IDs angegeben werden.
+**Discord**  
+- Create an application → OAuth2 redirect: `https://YOUR-PROXY/auth/callback`  
+- Scopes: `identify`, `guilds.members.read`  
+- Put Client ID, Secret, guild ID, role IDs, and webhooks into env vars  
 
-Beispiel:
+**Custom domain**  
+- Frontend: e.g. `vulpes-oculus.example.com`  
+- Proxy: e.g. `api.vulpes-oculus.example.com`  
+- Update `PUBLIC_URL`, `ALLOWED_RETURN_ORIGINS`, Discord redirect, and frontend proxy URL  
 
-`R-1-A, R-1-C`
-
-Das System löst diese IDs automatisch in die hinterlegten Regeltexte auf.
-
----
-
-## 💬 Discord-Anbindung
-
-Die Website kann mit Discord verbunden werden.
-
-Administrative Ereignisse können an den zuständigen Discord-Bereich weitergegeben werden, beispielsweise:
-
-- 🆕 neuer Charakter
-- ✏️ Änderung eines Charakters
-- ⚠️ Regelverstoß oder Verwarnung
-- 🗑️ Löschung eines Charakters
-
-Bei Regelverstößen wird nicht nur die interne ID übertragen. Discord erhält den hinterlegten **Regeltext**.
+Full checklist: see **SETUP.md** and **TEMPLATE-README.md**.
 
 ---
 
-## 💾 Datenspeicherung
+## Project layout
 
-Das Projekt verwendet eine zentrale Datenspeicherung für die gemeinsam genutzten Inhalte.
-
-Dazu gehören unter anderem:
-
-- Charaktere
-- Regeln
-- Völker
-- Berufe
-- Götter
-- Kreaturen
-- Events
-- Kalenderdaten
-- Wetter
-- Heilerakten
-- Bibliothek
-- Wiki-Inhalte
-- News
-
-Die Website und administrative Werkzeuge greifen dabei auf die gemeinsame Vulpes Oculus-Datenstruktur zurück.
-
----
-
-## 📅 Ingame-Zeitrechnung
-
-Die Welt besitzt eine eigene Zeitrechnung.
-
-| Realität | Vulpes Oculus |
-|---|---|
-| 1 realer Tag | 2 Ingame-Tage |
-| 15 reale Tage | 1 Ingame-Monat |
-| 30 Ingame-Tage | 1 Ingame-Monat |
-| 12 Ingame-Monate | 1 Ingame-Jahr |
-| 17.10.2026 | 1. Frostmond 1400 |
-
-Der Kalender bildet diese Zeitrechnung für das RP ab.
-
----
-
-## 🌦️ Fantasy-Wetter
-
-Das Wetter ist Bestandteil der Welt und nicht an reale Wetterdaten gebunden.
-
-Es können eigene Wetterzustände verwendet werden, beispielsweise:
-
-- Klarer Himmel
-- Leichter Wind
-- Regen
-- Nebel
-- Frost
-- Gewitter
-- besondere Fantasy-Wetterlagen
-
-Das Wetter kann administrativ gesteuert und für das RP verwendet werden.
-
----
-
-## 🏗️ Technischer Aufbau
-
-Das Projekt besteht überwiegend aus:
-
-- HTML
-- CSS
-- JavaScript
-- Node.js für serverseitige bzw. Proxy-Funktionen
-- MySQL bzw. zentrale Datenspeicherung
-- Discord OAuth
-- Discord-Anbindung
-- GitHub Pages
-- Render
-
-Wichtige Bestandteile sind unter anderem:
-
-`vulpesoculus-data.js`  
-`vulpesoculus-storage.js`  
-`vulpesoculus-sync.js`  
-`vulpesoculus-auth.js`
-
-Die öffentlichen Seiten und der geschützte Admin-Bereich sind voneinander getrennt.
-
----
-
-## 📁 Projektstruktur
-
-Eine vereinfachte Übersicht:
-
-```text
-vulpesoculus/
+```
+vulpes-oculus/
 ├── index.html
-├── charakterbogen.html
-├── kalender.html
-├── events.html
-├── news.html
-├── wiki.html
-├── bibliothek.html
-├── voelker.html
-├── berufe.html
-├── kreaturen.html
-├── regeln.html
-├── goetter.html
-├── karte.html
-├── heilerakte.html
-├── wetter.html
-│
-├── admin/
-│   ├── index.html
-│   ├── charaktere.html
-│   ├── charakterverwaltung.js
-│   ├── aufgaben.html
-│   ├── projekte.html
-│   ├── blacklist.html
-│   └── aktivitaeten.html
-│
-├── vulpesoculus-data.js
-├── vulpesoculus-storage.js
+├── charakterbogen.html          # Character sheet
+├── kalender.html, events.html, news.html
+├── wiki.html, bibliothek.html
+├── voelker.html, berufe.html, kreaturen.html, goetter.html
+├── regeln.html, karte.html, heilerakte.html, wetter.html
+├── admin/                       # Admin area
+├── vulpesoculus-storage.js      # Frontend ↔ proxy
 ├── vulpesoculus-sync.js
 ├── vulpesoculus-auth.js
-├── style.css
-└── README.md
+├── vulpesoculus-discord-proxy/  # Node proxy (MySQL + Discord)
+├── mysql-schema.sql
+├── config.example.json
+├── SETUP.md
+└── LICENSE
 ```
 
 ---
 
-## 🚀 Entwicklung
+## Config & secrets
 
-Das Projekt befindet sich in aktiver Entwicklung.
+Copy `config.example.json` → `config.json` (never commit secrets).  
+Required env vars for the proxy:
 
-Neue Funktionen werden direkt in die bestehende RP-Struktur integriert. Dabei liegt der Fokus auf:
+- `MYSQL_URL` or `MYSQL_HOST` + `MYSQL_USER` + `MYSQL_PASSWORD` + `MYSQL_DATABASE`
+- `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`
+- `AUTH_SECRET`
+- `PUBLIC_URL`, `ALLOWED_RETURN_ORIGINS`
 
-- einer übersichtlichen Bedienung
-- klarer Trennung zwischen Spieler- und Admin-Bereich
-- zentraler Datenspeicherung
-- nachvollziehbarer Verwaltung
-- Discord-Integration
-- einer lebendigen und erweiterbaren RP-Welt
-
----
-
-## 🔗 Projekt
-
-**GitHub:**  
-https://github.com/XxleynaxX/vulpesoculus
-
-**Website:**  
-https://xxleynaxx.github.io/vulpesoculus/
-
-**Projektname:**  
-**Vulpes Oculus – Das Zeitalter der Asche**
-
-**Entwicklung & Pflege:** Kiyasha
+Optional: role IDs, weather/character/healer/mod webhooks.
 
 ---
 
-## 📜 Copyright
+## License
 
-© Kiyasha – Vulpes Oculus
+MIT – see [LICENSE](LICENSE).
 
-Die Inhalte, Texte, Weltenelemente und individuellen Systeme dieses Projekts sind Bestandteil des Projekts **Vulpes Oculus**.
+Upstream structure inspired by [chronikenweb](https://github.com/XxleynaxX/chronikenweb) (Kiyasha). Vulpes Oculus is a separate project name and template.
+
+---
+
+## Description (short)
+
+Vulpes Oculus – A browser-based RP hub: character sheets, wiki, calendar, events, races, gods, creatures, rules, weather, healer records, and admin tools. HTML/JS frontend, Node proxy, MySQL storage, Discord login & webhooks. Run your own instance with config, domain, and full setup guide included.
