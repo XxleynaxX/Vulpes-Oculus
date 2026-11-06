@@ -1,5 +1,9 @@
 # Vulpes Oculus
 
+[![Join the Vulpes Oculus Discord](https://cdn.prod.website-files.com/6257d5a7f8f5b9f7f8c4c4b/6257d5a7f8f5b9f7f8c4c4b_discord-logo.png)](https://discord.gg/FmsF4rmwqG)
+
+[**Join the Vulpes Oculus Discord Community**](https://discord.gg/FmsF4rmwqG)
+
 **Vulpes Oculus** is a browser-based roleplay platform: character sheets, wiki, calendar, events, races, professions, gods, creatures, rules, map, weather, healer records, and admin tools.
 
 Stack: HTML / CSS / JavaScript frontend, Node.js proxy, MySQL storage, Discord OAuth and webhooks.
@@ -78,21 +82,21 @@ Or set `DEFAULT_PROXY` in `vulpesoculus-storage.js`.
 | Database | MySQL / MariaDB (any provider) |
 
 **Proxy (Render example)**  
-- Root directory: `vulpesoculus-discord-proxy`  
-- Build: `npm install`  
-- Start: `npm start`  
-- Set environment variables from `config.example.json`  
-- Set `PUBLIC_URL` to the proxy URL  
+- Root directory: `vulpesoculus-discord-proxy`
+- Build: `npm install`
+- Start: `npm start`
+- Set environment variables from `config.example.json`
+- Set `PUBLIC_URL` to the proxy URL
 
 **Discord**  
-- Create an application → OAuth2 redirect: `https://YOUR-PROXY/auth/callback`  
-- Scopes: `identify`, `guilds.members.read`  
-- Put Client ID, Secret, guild ID, role IDs, and webhooks into env vars  
+- Create an application → OAuth2 redirect: `https://YOUR-PROXY/auth/callback`
+- Scopes: `identify`, `guilds.members.read`
+- Put Client ID, Secret, guild ID, role IDs, and webhooks into env vars
 
 **Custom domain**  
-- Frontend: e.g. `vulpes-oculus.example.com`  
-- Proxy: e.g. `api.vulpes-oculus.example.com`  
-- Update `PUBLIC_URL`, `ALLOWED_RETURN_ORIGINS`, Discord redirect, and frontend proxy URL  
+- Frontend: e.g. `vulpes-oculus.example.com`
+- Proxy: e.g. `api.vulpes-oculus.example.com`
+- Update `PUBLIC_URL`, `ALLOWED_RETURN_ORIGINS`, Discord redirect, and frontend proxy URL
 
 Full checklist: see **SETUP.md** and **TEMPLATE-README.md**.
 
@@ -100,7 +104,7 @@ Full checklist: see **SETUP.md** and **TEMPLATE-README.md**.
 
 ## Project layout
 
-```
+```text
 vulpes-oculus/
 ├── index.html
 ├── charakterbogen.html          # Character sheet
