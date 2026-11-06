@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creatures & Wesen – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vulpesoculus-admin.css">
+  <style>
+    .lore-help{margin:.6rem 0;padding:.8rem 1rem;border:1px solid var(--border);border-radius:10px;background:rgba(124,58,237,.08);color:var(--text);line-height:1.6;font-size:.9rem}
+    .lore-help strong{color:var(--accent-soft)} .lore-help code{padding:.1rem .3rem;border-radius:5px;background:rgba(0,0,0,.22);color:var(--accent-soft)}
+    .lore-heading{color:var(--accent-soft);font-size:1.1rem;margin:1.1rem 0 .4rem}.lore-heading:first-child{margin-top:0}.lore-paragraph{margin:0 0 .8rem}.lore-list{margin:.3rem 0 .9rem 1.4rem;padding:0}.lore-list li{margin-bottom:.3rem}
+    .god-card {
+      cursor: pointer;
+      position: relative;
+    }
+    /* Kurzbeschreibung entfernt: Creatures werden direkt über den ausführlichen Text beschrieben. */
+    .god-card .short-text {
+    .god-card .click-hint {
+      font-size: 0.75rem;
+      color: var(--purple);
+      margin-top: 0.6rem;
+    }
+    .god-card.expanded {
+      grid-column: 1 / -1;
+      border-color: var(--purple);
+      box-shadow: 0 0 24px rgba(124, 58, 237, 0.3);
+    }
+    .god-card.expanded .short-text {
+      display: none;
+    }
+    .god-card .full-text {
+      display: none;
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.7;
+      margin-top: 0.5rem;
+    }
+    .god-card.expanded .full-text {
+      display: block;
+    }
+    .god-card.expanded .click-hint {
+      display: none;
+    }
+    .god-card .close-btn {
+      display: none;
+      margin-top: 1rem;
+    }
+    .danger-badge{display:inline-block;padding:.18rem .5rem;border-radius:999px;font-size:.72rem;margin:.35rem 0;border:1px solid var(--border)}.danger-badge.friedlich{color:#22c55e}.danger-badge.vorsicht{color:#eab308}.danger-badge.gefahr{color:#f97316}.danger-badge.extrem{color:#ef4444}.god-card.expanded .close-btn {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+    <header>
+    <div class="logo-wrap">
+      <div class="logo">Vulpes Oculus</div>
+    </div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html" class="active">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">Creatures & Wesen</h1>
+    <p class="page-desc">Wilde Bestien, friedliche Wesen, magische Wesen und wilde Magiebestien. Klicke auf eine Kachel für den vollen Text.</p>
+
+    <section class="admin-panel" id="adminPanel" style="display:none;">
+      <div class="admin-form">
+        <h2 id="formTitle">Neue Kreatur anlegen</h2>
+        <div class="admin-grid">
+          <div class="admin-field"><label>Name *</label><input id="fName" placeholder="z. B. Schattenwolf"></div>
+          <div class="admin-field"><label>Bereich</label>
+            <select id="fCategory"><option value="beasts">Wilde Bestien</option><option value="peaceful">Friedliche Wesen</option><option value="magic">Magische Wesen</option><option value="magicbeasts">Wilde Magiebestien</option><option value="dragons">Drachenwesen</option><option value="undead">Untote Wesen</option><option value="spirits">Geister &amp; Seelen</option><option value="elementals">Elementarwesen</option><option value="plants">Pflanzenwesen</option><option value="water">Wasserwesen</option><option value="sky">Himmelswesen</option><option value="demons">Dämonische Wesen</option></select>
+          </div>
+          <div class="admin-field"><label>Bereich / Eigenschaften</label><input id="fDomain" placeholder="z. B. Wald · Nacht · Jagd"></div><div class="admin-field"><label>Gefahrenstufe</label><select id="fDanger"><option value="friedlich">🟢 Friedlich</option><option value="vorsicht">🟡 Vorsicht</option><option value="gefahr">🟠 Gefährlich</option><option value="extrem">🔴 Extrem gefährlich</option></select></div>
+          <div class="admin-field full"><label>Ausführliche Beschreibung</label>
+          <div class="lore-help">
+            <strong>So schreibst du die Beschreibung:</strong><br>
+            Leerzeilen erzeugen neue Absätze. Überschriften mit
+            <code>- Überschrift -</code> oder <code>## Überschrift</code>.
+            Aufzählungen mit <code>- Punkt</code>, <code>• Punkt</code>,
+            <code>* Punkt</code> oder <code>1. Punkt</code>. Kein HTML nötig.
+          </div>
+          <textarea id="fFull" placeholder="Ausführliche Beschreibung, Verhalten, Besonderheiten..."></textarea></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn" id="btnSave">Save</button>
+          <button class="btn secondary" id="btnCancel" style="display:none;">Abbrechen</button>
+          <span class="admin-status" id="status"></span>
+        </div>
+      </div>
+      <h2 class="admin-sub-title">Vorhandene Creatures</h2>
+    </section>
+
+    <div id="contentView">
+      <div class="content-block">
+        <h2>Wilde Bestien</h2>
+        <div class="god-grid" id="beastsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Friedliche Wesen</h2>
+        <div class="god-grid" id="peacefulGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Magische Wesen</h2>
+        <div class="god-grid" id="magicGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Wilde Magiebestien</h2>
+        <div class="god-grid" id="magicbeastsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Drachenwesen</h2>
+        <div class="god-grid" id="dragonsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Untote Wesen</h2>
+        <div class="god-grid" id="undeadGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Geister &amp; Seelen</h2>
+        <div class="god-grid" id="spiritsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Elementarwesen</h2>
+        <div class="god-grid" id="elementalsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Pflanzenwesen</h2>
+        <div class="god-grid" id="plantsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Wasserwesen</h2>
+        <div class="god-grid" id="waterGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Himmelswesen</h2>
+        <div class="god-grid" id="skyGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Dämonische Wesen</h2>
+        <div class="god-grid" id="demonsGrid"></div>
+      </div>
+      <div class="content-block">
+        <h2>Hinweis</h2>
+        <p>
+          Diese Einträge sind eine Grundlage. Detaillierte Beschreibungen, Stärken und Schwächen
+          können im Wiki oder in der Library ergänzt werden.
+        </p>
+      </div>
+    </div>
+
+  <footer>
+    <p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p>
+  </footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js?v=20261031-mysql"></script>
+  <script src="vulpesoculus-data.js"></script>
+  <script>
+    const KEY = "kreaturen";
+    const STORAGE_KEY = "portal_kreaturen_data_v2";
+    const DEFAULT_DATA = {
+      beasts: [
+        {name:"Schattenwolf",domain:"Nacht · Jagd · Rudel",short:"Große, schwarzfellige Wölfe, die bei Vollmond besonders aktiv werden.",full:"Große, schwarzfellige Wölfe, die bei Vollmond besonders aktiv werden. Oft in Rudeln unterwegs. Ihre Augen leuchten in der Dunkelheit, und ihr Heulen soll Unglück verkünden."},
+        {name:"Steindrache",domain:"Berge · Feuer · Hoheit",short:"Seltene Drachen, die in hohen Felsnischen nisten.",full:"Seltene Drachen, die in hohen Felsnischen nisten. Territorial und äußerst gefährlich. Ihre Schuppen sind steinhart und ihr Atem kann Felsen schmelzen."},
+        {name:"Sumpfkrake",domain:"Sumpf · Gift · Lauer",short:"Vielarmige Wesen in tiefen Sümpfen.",full:"Vielarmige Wesen in tiefen Sümpfen. Sie greifen Beute von unten an und ziehen sie hinab."}
+      ],
+      peaceful: [],
+      magic: [
+        {name:"Lichtfee",domain:"Wald · Licht · Tricks",short:"Kleine, leuchtende Wesen.",full:"Kleine, leuchtende Wesen, die helfen oder Reisende in die Irre führen können."},
+        {name:"Geisterwächter",domain:"Ruinen · Schutz · Erinnerung",short:"Gebundene Seelen alter Krieger.",full:"Gebundene Seelen alter Krieger, die heilige oder verfluchte Orte bewachen."},
+        {name:"Kristallgolem",domain:"Höhlen · Magie · Stein",short:"Aus lebendigem Kristall geformte Konstrukte.",full:"Aus lebendigem Kristall geformte Konstrukte, die oft von alten Magiern zurückgelassen wurden."}
+      ],
+      magicbeasts: [],
+      dragons: [],
+      undead: [],
+      spirits: [],
+      elementals: [],
+      plants: [],
+      water: [],
+      sky: [],
+      demons: []
+    };
+    // Die Datenbank (Key "creatures") erwartet ein ARRAY. Intern arbeitet die Seite mit
+    // einem Objekt {kategorie:[...]}. Beim Save/Laden wird deshalb umgewandelt.
+    function toRemote(d){
+      const out=[];
+      Object.keys(d||{}).forEach(cat=>{
+        if(!Array.isArray(d[cat])) return;
+        d[cat].forEach(item=>out.push(Object.assign({}, item, {category:cat})));
+      });
+      return out;
+    }
+    function fromRemote(remote){
+      // Altes Format (Objekt) weiter akzeptieren
+      if(remote && typeof remote==="object" && !Array.isArray(remote)) return remote;
+      const d={}; Object.keys(DEFAULT_DATA).forEach(k=>d[k]=[]);
+      (Array.isArray(remote)?remote:[]).forEach(item=>{
+        if(!item||typeof item!=="object") return;
+        const cat=item.category&&Object.prototype.hasOwnProperty.call(d,item.category)?item.category:"beasts";
+        const copy=Object.assign({},item); delete copy.category;
+        d[cat].push(copy);
+      });
+      return d;
+    }
+    const esc = Vulpes OculusData.esc;
+    let editCategory = null, editIndex = null;
+    const el = id => document.getElementById(id);
+    function admin(){ return Vulpes OculusData.isAdmin(); }
+    function loadData(){
+      if (window._kreaturenCache) return JSON.parse(JSON.stringify(window._kreaturenCache));
+      const seed = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      window._kreaturenCache = seed;
+      return JSON.parse(JSON.stringify(seed));
+    }
+    function saveData(d){
+      window._kreaturenCache = d;
+      if (window.Vulpes OculusStorage) {
+        Vulpes OculusStorage.save("kreaturen", toRemote(d)).catch(err => console.warn("Creatures Save fehlgeschlagen:", err));
+      }
+    }
+    function formatLore(text) {
+      if (!text) return "";
+      const normalized = String(text).replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\\\\n/g, "\n");
+      const lines = normalized.split("\n"), parts = []; let listItems = [];
+      const flushList = () => { if (!listItems.length) return; parts.push("<ul class=\"lore-list\">"+listItems.map(item=>"<li>"+esc(item)+"</li>").join("")+"</ul>"); listItems=[]; };
+      lines.forEach(line => {
+        const trimmed=line.trim(); if(!trimmed){flushList();return;}
+        const bullet=trimmed.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/); if(bullet){listItems.push(bullet[1]);return;}
+        flushList();
+        const heading=trimmed.match(/^-+\s*(.+?)\s*-+$/); if(heading){parts.push("<h4 class=\"lore-heading\">"+esc(heading[1])+"</h4>");return;}
+        const markdownHeading=trimmed.match(/^#{1,4}\s+(.+)$/); if(markdownHeading){parts.push("<h4 class=\"lore-heading\">"+esc(markdownHeading[1])+"</h4>");return;}
+        parts.push("<p class=\"lore-paragraph\">"+esc(trimmed)+"</p>");
+      }); flushList(); return parts.join("");
+    }
+
+    function resetForm(){
+      editCategory=null; editIndex=null;
+      el("fName").value=""; el("fCategory").value="beasts"; el("fDomain").value=""; el("fDanger").value="friedlich"; el("fFull").value="";
+      el("formTitle").textContent="Neue Kreatur anlegen"; el("btnSave").textContent="Save"; el("btnCancel").style.display="none"; el("status").textContent="";
+    }
+    function startEdit(category,index){
+      const item=loadData()[category][index]; if(!item) return;
+      editCategory=category; editIndex=index;
+      el("fName").value=item.name||""; el("fCategory").value=category; el("fDomain").value=item.domain||""; el("fDanger").value=item.danger||defaultDanger(category); el("fFull").value=item.full||"";
+      el("formTitle").textContent="Kreatur bearbeiten"; el("btnSave").textContent="Änderungen speichern"; el("btnCancel").style.display="inline-block";
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    function remove(category,index){
+      if(!confirm("Diese Kreatur wirklich löschen?")) return;
+      const d=loadData(); d[category].splice(index,1); saveData(d); resetForm(); render();
+    }
+    function defaultDanger(category){return ["peaceful","plants"].includes(category)?"friedlich":["magic","spirits","water","sky"].includes(category)?"vorsicht":["dragons","demons","undead","magicbeasts"].includes(category)?"extrem":"gefahr"} function dangerLabel(level){return {friedlich:"🟢 Friedlich",vorsicht:"🟡 Vorsicht",gefahr:"🟠 Gefährlich",extrem:"🔴 Extrem gefährlich"}[level]||"🟡 Vorsicht"} function card(item,category,index){
+      const danger=item.danger||defaultDanger(category); return `<article class="god-card"><h3>${esc(item.name)}</h3><div class="domain">${esc(item.domain||"")}</div><span class="danger-badge ${esc(danger)}">${dangerLabel(danger)}</span><div class="full-text">${formatLore(item.full||"")}</div><div class="click-hint">Klicken zum Aufklappen →</div>${admin()?`<div class="tile-actions"><button class="btn secondary" data-edit="${category}:${index}">Edit</button><button class="btn danger" data-del="${category}:${index}">Delete</button></div>`:""}</article>`;
+    }
+    function render(){
+      const d=loadData();
+      el("adminPanel").style.display=admin()?"block":"none";
+      el("beastsGrid").innerHTML=(d.beasts||[]).map((x,i)=>card(x,"beasts",i)).join("");
+      el("peacefulGrid").innerHTML=(d.peaceful||[]).map((x,i)=>card(x,"peaceful",i)).join("");
+      el("magicGrid").innerHTML=(d.magic||[]).map((x,i)=>card(x,"magic",i)).join("");
+      el("magicbeastsGrid").innerHTML=(d.magicbeasts||[]).map((x,i)=>card(x,"magicbeasts",i)).join("");
+      el("dragonsGrid").innerHTML=(d.dragons||[]).map((x,i)=>card(x,"dragons",i)).join("");
+      el("undeadGrid").innerHTML=(d.undead||[]).map((x,i)=>card(x,"undead",i)).join("");
+      el("spiritsGrid").innerHTML=(d.spirits||[]).map((x,i)=>card(x,"spirits",i)).join("");
+      el("elementalsGrid").innerHTML=(d.elementals||[]).map((x,i)=>card(x,"elementals",i)).join("");
+      el("plantsGrid").innerHTML=(d.plants||[]).map((x,i)=>card(x,"plants",i)).join("");
+      el("waterGrid").innerHTML=(d.water||[]).map((x,i)=>card(x,"water",i)).join("");
+      el("skyGrid").innerHTML=(d.sky||[]).map((x,i)=>card(x,"sky",i)).join("");
+      el("demonsGrid").innerHTML=(d.demons||[]).map((x,i)=>card(x,"demons",i)).join("");
+      document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [c,i]=b.dataset.edit.split(":");startEdit(c,+i);});
+      document.querySelectorAll("[data-del]").forEach(b=>b.onclick=e=>{e.stopPropagation();const [c,i]=b.dataset.del.split(":");remove(c,+i);});
+      document.querySelectorAll(".god-card").forEach(c=>{ if(c.dataset.bound) return; c.dataset.bound="1"; c.onclick=e=>{if(e.target.closest("button"))return;c.classList.toggle("expanded");}; });
+    }
+    async function save(){
+      const name=el("fName").value.trim(); if(!name){el("status").textContent="Bitte einen Namen eingeben.";return;}
+      const item={name,domain:el("fDomain").value.trim(),danger:el("fDanger").value,full:el("fFull").value.trim()};
+      const d=loadData(); const category=el("fCategory").value;
+      if(editCategory!==null && d[editCategory] && d[editCategory][editIndex]) d[editCategory].splice(editIndex,1);
+      if(!d[category]) d[category]=[];
+      d[category].push(item);
+      el("status").style.color="#aaa"; el("status").textContent="Speichere…";
+      try {
+        await new Promise((resolve, reject) => {
+          window._kreaturenCache = d;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+          if (window.Vulpes OculusStorage) {
+            Vulpes OculusStorage.save("kreaturen", toRemote(d)).then(resolve).catch(reject);
+          } else {
+            reject(new Error("Vulpes OculusStorage nicht geladen."));
+          }
+        });
+        resetForm();
+        el("status").style.color="#22c55e";
+        el("status").textContent="✓ Gespeichert";
+        render();
+        setTimeout(()=>el("status").textContent="",2500);
+      } catch(e) {
+        console.error(e);
+        el("status").style.color="#e74c3c";
+        el("status").textContent="Fehler beim Save: "+((e&&e.message)||e);
+      }
+    }
+    el("btnSave").onclick=save; el("btnCancel").onclick=resetForm;
+
+    // Aus der Datenbank laden (falls vorhanden)
+    (async function(){
+      if (!window.Vulpes OculusStorage) { render(); return; }
+      try {
+        const remoteRaw = await Vulpes OculusStorage.load("kreaturen");
+        const remote = fromRemote(remoteRaw);
+        const hasData = Object.keys(remote).some(k => Array.isArray(remote[k]) && remote[k].length > 0);
+        if (hasData) {
+          window._kreaturenCache = remote;
+        } else if (admin()) {
+          // Datenbank leer → lokale Daten (Defaults) hochladen (nur als Admin erlaubt)
+          await Vulpes OculusStorage.save("kreaturen", toRemote(loadData()));
+        }
+      } catch(e){ console.warn("Creatures Remote-Sync:", e); }
+      render();
+    })();
+    window.addEventListener("storage",render);
+  </script>
+<script src="legal-notice.js"></script>
+</body>
+</html>

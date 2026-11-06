@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vulpes Oculus · Admin Dashboard</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+#charAdmin{margin-top:1.5rem}.char-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.char-admin-full{grid-column:1/-1}
+.char-admin-grid label{display:block;font-size:.86rem;color:#aaa;margin-bottom:.35rem}.char-admin-grid input,.char-admin-grid textarea,.char-admin-grid select{width:100%;box-sizing:border-box;padding:.65rem .75rem;border:1px solid #3b3157;border-radius:7px;background:#110d1d;color:#fff}.char-admin-grid textarea{min-height:100px;resize:vertical}
+.char-admin-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}.char-admin-table{width:100%;border-collapse:collapse}.char-admin-table th,.char-admin-table td{padding:.7rem;border-bottom:1px solid #302642;text-align:left;vertical-align:top}.char-admin-table th{color:#c8b6ff}.char-admin-table-wrap{overflow-x:auto}.char-id{font-family:monospace;color:#c8b6ff}.warn-badge{display:inline-block;min-width:1.5rem;text-align:center;padding:.15rem .45rem;border-radius:99px;background:#57182a;color:#fb7185}.warn-badge.zero{background:#123d26;color:#4ade80}.char-actions{white-space:nowrap}.sheet-modal{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.82);overflow:auto;padding:2rem 1rem}.sheet-box{max-width:850px;margin:auto;background:#160f24;border:1px solid #3b3157;border-radius:12px;padding:1.4rem}.sheet-row{display:grid;grid-template-columns:190px 1fr;gap:1rem;padding:.55rem 0;border-bottom:1px dashed #3b3157}.sheet-row b{color:#c8b6ff}.sheet-modal textarea{width:100%;min-height:280px;background:#0d0915;color:#fff;border:1px solid #3b3157;border-radius:7px;padding:.7rem;box-sizing:border-box}.muted{color:#999}
+@media(max-width:700px){.char-admin-grid{grid-template-columns:1fr}.char-admin-full{grid-column:auto}.sheet-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+<div class="brand">Vulpes Oculus <small>Admin</small></div>
+<nav>
+<a class="active" href="index.html">🏠 Dashboard</a>
+<a href="aufgaben.html">📋 Tasks</a>
+<a href="projekte.html">📁 Projects</a>
+<a href="charaktere.html">🛡️ Charakterverwaltung</a>
+<a href="blacklist.html">🚫 Spieler-Blacklist</a>
+<a href="aktivitaeten.html">📜 Activity</a>
+<a href="../index.html">↩ Zur Webseite</a>
+</nav>
+</aside>
+<main class="main">
+<header class="top"><div><h1>Admin Dashboard</h1><p>Auf einen Blick: offen, in Arbeit und fertig.</p></div><div class="user" id="user">Lade Login …</div></header>
+<section id="locked" class="panel locked" hidden><h2>🔒 Nur für Admins</h2><p>Dieser Bereich benötigt die Discord-Adminrolle.</p><a class="btn" id="login">Mit Discord anmelden</a></section>
+<div id="app" hidden>
+<section class="stats">
+<article><span>📋</span><strong id="total">0</strong><small>Tasks gesamt</small></article><article><span>⚪</span><strong id="open">0</strong><small>Offen</small></article><article><span>🟡</span><strong id="working">0</strong><small>In Arbeit</small></article><article><span>🔵</span><strong id="waiting">0</strong><small>Wartet</small></article><article><span>🔴</span><strong id="blocked">0</strong><small>Blockiert</small></article><article><span>🟢</span><strong id="done">0</strong><small>Fertig</small></article>
+</section>
+<section class="panel admin-shortcuts">
+<div class="panel-head"><h2>🛡️ Charakterverwaltung</h2><span class="muted">Eigener Bereich für Charaktere, Verwarnungen und Regelverstöße</span></div>
+<a class="btn" href="charaktere.html">🛡️ Charakterverwaltung öffnen</a>
+</section>
+<section class="grid2"><div class="panel"><div class="panel-head"><h2>Aktuelle Tasks</h2><a class="btn small" href="aufgaben.html">Alle anzeigen</a></div><div id="tasks" class="task-list"></div></div><div class="panel"><div class="panel-head"><h2>Letzte Activity</h2><a class="btn small" href="aktivitaeten.html">Verlauf</a></div><div id="activity" class="activity-list"></div></div></section>
+<section class="panel"><div class="panel-head"><h2>📜 Changelog</h2><span class="muted">Was im Admin-System umgesetzt wurde</span></div><div id="changelog" class="activity-list"></div></section>
+</div>
+</main></div>
+<script src="admin.js"></script>
+<script src="dashboard.js"></script>
+</body></html>

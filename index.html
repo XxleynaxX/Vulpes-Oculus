@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vulpes Oculus – Start</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .live-news {
+      max-width: 1100px;
+      margin: 0 auto 2.5rem;
+      padding: 0 1.5rem;
+    }
+    .live-news h2 {
+      color: var(--purple-bright);
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .live-news h2 .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .news-strip { display: flex; flex-direction: column; gap: 0.8rem; }
+    .news-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      transition: border-color 0.2s, background 0.2s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .news-item:hover { border-color: var(--purple); background: var(--bg-hover); }
+    .news-item h3 { color: var(--purple-bright); font-size: 1.05rem; margin-bottom: 0.25rem; }
+    .news-item .meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .news-item p {
+      color: var(--text);
+      font-size: 0.92rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .news-empty { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
+    .news-more {
+      margin-top: 0.8rem;
+      display: inline-block;
+      color: var(--purple-bright);
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    .news-more:hover { text-decoration: underline; }
+
+    /* ===== FUCHS & VAMPIR ===== */
+    .critter {
+      position: fixed;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      transition: left 0.55s cubic-bezier(0.34, 1.4, 0.64, 1),
+                  top 0.55s cubic-bezier(0.34, 1.4, 0.64, 1),
+                  opacity 0.5s, transform 0.4s;
+    }
+    .critter .bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--purple);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 12px 12px 12px 4px;
+      font-size: 0.82rem;
+      max-width: 200px;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+      opacity: 0;
+      transform: translateY(6px) scale(0.95);
+      transition: opacity 0.3s, transform 0.3s;
+      line-height: 1.35;
+      pointer-events: none;
+      text-align: center;
+    }
+    .critter .bubble.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .critter.vamp .bubble {
+      border-color: #9f1239;
+      box-shadow: 0 6px 20px rgba(159, 18, 57, 0.35);
+    }
+    .critter .emoji {
+      font-size: 2.8rem;
+      line-height: 1;
+      cursor: pointer;
+      pointer-events: auto;
+      user-select: none;
+      filter: drop-shadow(0 4px 10px rgba(168, 85, 247, 0.35));
+      animation: bob 2.4s ease-in-out infinite;
+      transition: transform 0.2s;
+    }
+    .critter.vamp .emoji {
+      filter: drop-shadow(0 4px 10px rgba(159, 18, 57, 0.45));
+      animation: vamp-bob 2.2s ease-in-out infinite;
+    }
+    .critter .emoji:hover { transform: scale(1.15) rotate(-8deg); }
+    .critter.hiding {
+      opacity: 0;
+      transform: scale(0.5);
+      pointer-events: none;
+    }
+    .critter.chase .emoji {
+      animation: spin-run 0.4s linear infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+    @keyframes vamp-bob {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      50% { transform: translateY(-5px) rotate(4deg); }
+    }
+    @keyframes spin-run {
+      0% { transform: rotate(0) scale(1.05); }
+      50% { transform: rotate(12deg) scale(1.1); }
+      100% { transform: rotate(0) scale(1.05); }
+    }
+    @media (max-width: 600px) {
+      .critter .emoji { font-size: 2.3rem; }
+      .critter .bubble { max-width: 160px; font-size: 0.78rem; }
+    }
+
+
+    /* ===== ADMIN-BEREICH ===== */
+    .admin-section {
+      max-width: 1100px;
+      margin: 2.5rem auto 0;
+      padding: 0 1.5rem 2rem;
+    }
+    .admin-section[hidden] { display: none; }
+    .admin-section h2 {
+      color: var(--purple-bright);
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .admin-section-subtitle {
+      color: var(--text-muted);
+      margin: -0.5rem 0 1rem;
+      font-size: 0.92rem;
+    }
+    .admin-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .admin-tile {
+      display: block;
+      text-decoration: none;
+      color: var(--text);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      transition: transform .2s, border-color .2s, background .2s;
+      backdrop-filter: blur(10px);
+    }
+    .admin-tile:hover {
+      transform: translateY(-3px);
+      border-color: var(--purple);
+      background: var(--bg-hover);
+    }
+    .admin-tile-icon {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: .55rem;
+    }
+    .admin-tile h3 {
+      margin: 0 0 .3rem;
+      color: var(--purple-bright);
+      font-size: 1.05rem;
+    }
+    .admin-tile p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: .86rem;
+      line-height: 1.4;
+    }
+    @media (max-width: 800px) {
+      .admin-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 520px) {
+      .admin-tiles { grid-template-columns: 1fr; }
+      .admin-section { padding-left: 1rem; padding-right: 1rem; }
+    }
+
+    .footer-admin-login {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-left: 0.25rem;
+    }
+    .footer-admin-login input {
+      width: 120px;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.8rem;
+    }
+    .footer-admin-login button {
+      padding: 0.3rem 0.55rem;
+      border: 1px solid var(--purple);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--purple-bright);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8rem;
+    }
+    .footer-admin-login button:hover {
+      background: var(--bg-hover);
+    }
+    @media (max-width: 600px) {
+      .footer-admin-login {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 0.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <div class="leaves-container" id="leavesContainer" aria-hidden="true"></div>
+
+  <!-- Ambient Nature Sound Panel (Wind + Laub + Uhu + Lautstärke) -->
+  <div class="ambient-panel" id="ambientPanel">
+    <button class="ambient-toggle" id="ambientToggle" title="Naturklänge an/aus">🦉</button>
+    <div class="ambient-volume-wrap">
+      <span>🔊</span>
+      <input type="range" class="ambient-volume" id="ambientVolume" min="0" max="100" value="15" title="Lautstärke">
+      <span class="ambient-vol-label" id="ambientVolLabel">12%</span>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo-wrap">
+      <div class="logo">Vulpes Oculus</div>
+    </div>
+    <nav>
+      <a href="index.html" class="active">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+    </nav>
+  </header>
+
+  <main class="portal-main">
+    <section class="hero">
+      <h1>Willkommen im Portal</h1>
+      <p class="subtitle">Das Tor zu Wissen, Events, Professionsn und den Mächten der Welt</p>
+    </section>
+
+    <section class="live-news">
+      <h2><span class="live-dot"></span> Live News</h2>
+      <div class="news-strip" id="liveNews"></div>
+      <a href="news.html" class="news-more">Alle News ansehen →</a>
+    </section>
+
+    <div class="portal-gates">
+      <a href="events.html" class="gate">
+        <span class="gate-icon">📅</span>
+        <h2>Events</h2>
+        <p>Anstehende und vergangene Events</p>
+      </a>
+      <a href="kalender.html" class="gate">
+        <span class="gate-icon">🗓️</span>
+        <h2>Calendar</h2>
+        <p>Ingame-Zeit, Feiertage und Geburtstage</p>
+      </a>
+      <a href="wiki.html" class="gate">
+        <span class="gate-icon">📜</span>
+        <h2>Wiki</h2>
+        <p>Wissen sammeln, Themen erstellen und teilen</p>
+      </a>
+      <a href="bibliothek.html" class="gate">
+        <span class="gate-icon">📚</span>
+        <h2>Library</h2>
+        <p>Bücher, Schriften und Archive</p>
+      </a>
+      <a href="berufe.html" class="gate">
+        <span class="gate-icon">⚒️</span>
+        <h2>Professions & Handwerk</h2>
+        <p>Professions, Handwerke und Tasks</p>
+      </a>
+      <a href="kreaturen.html" class="gate">
+        <span class="gate-icon">🐉</span>
+        <h2>Creatures & Wesen</h2>
+        <p>Bestien, magische Wesen und mehr</p>
+      </a>
+      <a href="regeln.html" class="gate">
+        <span class="gate-icon">⚖️</span>
+        <h2>Rules</h2>
+        <p>Die Gesetze und Richtlinien des Portals</p>
+      </a>
+      <a href="goetter.html" class="gate">
+        <span class="gate-icon">🔥</span>
+        <h2>Gods & Kulte</h2>
+        <p>Die himmlischen und dunklen Mächte</p>
+      </a>
+      <a href="karte.html" class="gate">
+        <span class="gate-icon">🗺️</span>
+        <h2>Weltkarte</h2>
+        <p>Orte, Reiche und Gefahren der Welt</p>
+      </a>
+      <a href="voelker.html" class="gate">
+        <span class="gate-icon">🧝</span>
+        <h2>Races & Rassen</h2>
+        <p>Alle Races, Größen, Alter und Eigenschaften</p>
+      </a>
+      <a href="charakterbogen.html" class="gate">
+        <span class="gate-icon">🎭</span>
+        <h2>Character Sheet</h2>
+        <p>Digitaler Character Sheet · Vulpes Oculus</p>
+      </a>
+      <a href="heilerakte.html" class="gate">
+        <span class="gate-icon">🩺</span>
+        <h2>Healer Records</h2>
+        <p>Medizinische RP-Akten · für Heiler &amp; Admins</p>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <p>
+      © 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten ·
+      <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a>
+      ·
+      </p>
+  </footer>
+
+
+  <!-- FUCHS -->
+  <div class="critter" id="fox" style="bottom:20px; right:20px; left:auto; top:auto;">
+    <div class="bubble" id="foxBubble"></div>
+    <div class="emoji" id="foxEmoji" title="Fuchs – klick mich!">🦊</div>
+  </div>
+
+  <!-- VAMPIR (versteckt, kommt ab und zu) -->
+  <div class="critter vamp hiding" id="vamp" style="bottom:20px; left:20px; right:auto; top:auto;">
+    <div class="bubble" id="vampBubble"></div>
+    <div class="emoji" id="vampEmoji" title="Vampir!">🧛</div>
+  </div>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script src="vulpesoculus-sync.js" data-reload-on-change></script>
+  <script src="weather-config.js"></script>
+  <script src="wetter.js"></script>
+<script>
+    // ===== LOGIN (nur Discord, Knopf in der Menüleiste) =====
+    (function() {
+      const ADMIN_KEY = "portal_admin_auth";
+      const LIB_KEY = "portal_bibliothek_auth";
+
+      function isAdmin() {
+        try { return sessionStorage.getItem(ADMIN_KEY) === "1"; } catch { return false; }
+      }
+      function isLib() {
+        try { return sessionStorage.getItem(LIB_KEY) === "1"; } catch { return false; }
+      }
+      function isHeiler() {
+        try { return sessionStorage.getItem("portal_heiler_auth") === "1"; } catch { return false; }
+      }
+      function setAdmin(on) {
+        try {
+          if (on) sessionStorage.setItem(ADMIN_KEY, "1");
+          else sessionStorage.removeItem(ADMIN_KEY);
+        } catch {}
+      }
+      function setLib(on) {
+        try {
+          if (on) sessionStorage.setItem(LIB_KEY, "1");
+          else sessionStorage.removeItem(LIB_KEY);
+        } catch {}
+      }
+      function refreshLoginUI() {
+        let logoutBlocked = false;
+        try { logoutBlocked = !!localStorage.getItem("vulpesoculus_logout"); } catch (e) {}
+        const admin = !logoutBlocked && isAdmin();
+        const lib = !logoutBlocked && isLib();
+        const heiler = !logoutBlocked && isHeiler();
+        const logged = admin || lib || heiler;
+        const gate = document.getElementById("adminGate");
+        if (gate) gate.style.display = admin ? "" : "none";
+        const wGate = document.getElementById("weatherGate");
+        if (wGate) wGate.style.display = admin ? "" : "none";
+        const navW = document.getElementById("navWeather");
+        if (navW) navW.style.display = admin ? "" : "none";
+        const navA = document.getElementById("navAdmin");
+        if (navA) navA.style.display = admin ? "" : "none";
+        const formWrap = document.getElementById("loginFormWrap");
+        const loggedIn = document.getElementById("loginLoggedIn");
+        if (formWrap) formWrap.style.display = logged ? "none" : "block";
+        if (loggedIn) loggedIn.style.display = logged ? "block" : "none";
+
+        const roleTitle = document.getElementById("loginRoleTitle");
+        const roleInfo = document.getElementById("loginRoleInfo");
+        const btnAdmin = document.getElementById("btnToAdmin");
+        const btnLib = document.getElementById("btnToLib");
+        const btnHeiler = document.getElementById("btnToHeiler");
+        if (btnHeiler) btnHeiler.style.display = (admin || heiler) ? "block" : "none";
+
+        if (admin && lib) {
+          if (roleTitle) roleTitle.textContent = "Angemeldet";
+          if (roleInfo) roleInfo.textContent = "Admin + Library";
+          if (btnAdmin) btnAdmin.style.display = "block";
+          if (btnLib) btnLib.style.display = "block";
+        } else if (admin) {
+          if (roleTitle) roleTitle.textContent = "Admin aktiv";
+          if (roleInfo) roleInfo.textContent = (window.Vulpes OculusAuth && Vulpes OculusAuth.name() ? Vulpes OculusAuth.name() + " · " : "") + "kann auch in der Library schreiben";
+          if (btnAdmin) btnAdmin.style.display = "block";
+          if (btnLib) btnLib.style.display = "block";
+        } else if (lib) {
+          if (roleTitle) roleTitle.textContent = "Library aktiv";
+          if (roleInfo) roleInfo.textContent = (window.Vulpes OculusAuth && Vulpes OculusAuth.name()) || "";
+          if (btnAdmin) btnAdmin.style.display = "none";
+          if (btnLib) btnLib.style.display = "block";
+        } else if (heiler) {
+          if (roleTitle) roleTitle.textContent = "Heiler aktiv";
+          if (roleInfo) roleInfo.textContent = (window.Vulpes OculusAuth && Vulpes OculusAuth.name()) || "";
+          if (btnAdmin) btnAdmin.style.display = "none";
+          if (btnLib) btnLib.style.display = "none";
+        }
+      }
+      function doLogout() {
+        setAdmin(false);
+        setLib(false);
+        try { sessionStorage.removeItem("portal_heiler_auth"); } catch (e) {}
+        if (window.Vulpes OculusAuth && Vulpes OculusAuth.logout) return Vulpes OculusAuth.logout();
+        refreshLoginUI();
+      }
+      document.getElementById("btnLogoutPanel")?.addEventListener("click", doLogout);
+      refreshLoginUI();
+    })();
+
+
+    // ===== ADMIN-BEREICH AUF DER STARTSEITE =====
+    // Admin-Inhalte werden absichtlich NICHT fest ins HTML geschrieben.
+    // Erst wenn /auth/me serverseitig bestätigt, dass der Benutzer Admin ist,
+    // werden die Admin-Kacheln und der Admin-Charaktere-Link erzeugt.
+    (function() {
+      let section = null;
+      let gate = null;
+      let weatherGate = null;
+
+      const portalGates = document.querySelector(".portal-gates");
+      const main = document.querySelector(".portal-main");
+      const proxy = (window.VULPES OCULUS_DISCORD_PROXY || "https://vulpesoculus-1.onrender.com").replace(/\/$/, "");
+
+      function clearAdminUI() {
+        if (section) section.remove();
+        if (gate) gate.remove();
+        if (weatherGate) weatherGate.remove();
+        section = null;
+        gate = null;
+        weatherGate = null;
+      }
+
+      function buildAdminUI() {
+        if (!portalGates || !main) return;
+
+        // Doppelte Kacheln verhindern: mehrere checkAdmin()-Aufrufe können
+        // gleichzeitig laufen, daher vor dem Aufbau alles Vorhandene entfernen.
+        clearAdminUI();
+        document.querySelectorAll("#adminSection, .admin-dynamic-host, #weatherGate, #navAdmin")
+          .forEach(function (el) { el.remove(); });
+
+        gate = document.createElement("div");
+        gate.className = "admin-dynamic-host";
+
+        weatherGate = document.createElement("a");
+        weatherGate.href = "wetter.html";
+        weatherGate.className = "gate admin-gate";
+        weatherGate.id = "weatherGate";
+        weatherGate.innerHTML = `
+          <span class="gate-icon" id="weatherGateIcon">🌦️</span>
+          <h2>Weather · <span id="weatherGateName">…</span></h2>
+          <p><span id="weatherGateDesc"></span><br><small>Nächster Wechsel in <strong id="weatherGateCountdown">--:--:--</strong> · verwalten</small></p>`;
+        portalGates.appendChild(weatherGate);
+
+        section = document.createElement("section");
+        section.className = "admin-section";
+        section.id = "adminSection";
+        main.appendChild(section);
+
+        section.innerHTML = `
+          <h2>🛡️ Administration</h2>
+          <p class="admin-section-subtitle">Nur für Mitglieder mit Admin-Rechten sichtbar.</p>
+          <div class="admin-tiles">
+
+            <a href="admin/aufgaben.html" class="admin-tile"><span class="admin-tile-icon">📋</span><h3>Tasks</h3><p>Admin-Tasks erstellen, bearbeiten, zuweisen und verfolgen.</p></a>
+            <a href="admin/projekte.html" class="admin-tile"><span class="admin-tile-icon">📁</span><h3>Projects</h3><p>Projects verwalten und den aktuellen Stand im Blick behalten.</p></a>
+            <a href="admin/blacklist.html" class="admin-tile"><span class="admin-tile-icon">🚫</span><h3>Blacklist</h3><p>Steam-IDs verwalten und gesperrte Spieler kontrollieren.</p></a>
+            <a href="admin/aktivitaeten.html" class="admin-tile"><span class="admin-tile-icon">📜</span><h3>Activity</h3><p>Änderungen und Aktionen der Administration nachvollziehen.</p></a>
+
+          </div>`;
+        section.hidden = false;
+        section.style.setProperty("display", "block", "important");
+
+
+      }
+
+      async function checkAdmin() {
+        clearAdminUI();
+        // Nach dem Logout bleibt der Browser abgemeldet (wie der Login-Knopf),
+        // selbst wenn der Server-Cookie noch gültig sein sollte: nichts anzeigen
+        // und den Cookie serverseitig noch einmal löschen lassen.
+        let loggedOut = false;
+        try { loggedOut = !!localStorage.getItem("vulpesoculus_logout"); } catch (e) {}
+        if (loggedOut) {
+          try {
+            sessionStorage.removeItem("portal_admin_auth");
+            sessionStorage.removeItem("portal_bibliothek_auth");
+            sessionStorage.removeItem("portal_heiler_auth");
+          } catch (e) {}
+          fetch(proxy + "/auth/logout", { method: "POST", cache: "no-store", credentials: "include", redirect: "manual" }).catch(function () {});
+          return;
+        }
+        try {
+          const res = await fetch(proxy + "/auth/me", {
+            cache: "no-store",
+            credentials: "include"
+          });
+          const info = await res.json().catch(() => ({}));
+          if (res.ok && info.ok && info.admin === true) {
+            buildAdminUI();
+            // Menüleiste (Login-Knopf) mit der Server-Prüfung abgleichen:
+            // gültige Admin-Session, aber leerer sessionStorage → einmal neu laden.
+            let flagged = false, retried = false, loggedOut = false;
+            try {
+              flagged = sessionStorage.getItem("portal_admin_auth") === "1";
+              retried = sessionStorage.getItem("vulpesoculus_admin_sync") === "1";
+              loggedOut = !!localStorage.getItem("vulpesoculus_logout");
+            } catch (e) {}
+            if (!flagged && !retried && !loggedOut) {
+              try {
+                sessionStorage.setItem("portal_admin_auth", "1");
+                sessionStorage.setItem("portal_bibliothek_auth", "1");
+                sessionStorage.setItem("portal_heiler_auth", "1");
+                if (info.name) sessionStorage.setItem("vulpesoculus_discord_name", info.name);
+                sessionStorage.setItem("vulpesoculus_admin_sync", "1");
+                location.reload();
+              } catch (e) {}
+            }
+          } else {
+            // Kein Admin (oder nicht angemeldet): Admin-Flags entfernen, nichts anzeigen
+            try {
+              sessionStorage.removeItem("portal_admin_auth");
+              sessionStorage.removeItem("vulpesoculus_admin_sync");
+            } catch (e) {}
+          }
+        } catch (e) {
+          clearAdminUI();
+        }
+      }
+
+      checkAdmin();
+      window.addEventListener("vulpesoculus-auth-changed", checkAdmin);
+      window.addEventListener("pageshow", checkAdmin);
+    })();
+
+    // ===== WETTER (nur Admin) =====
+    (function() {
+      function drawWeather() {
+        const gate = document.getElementById("weatherGate");
+        if (!gate || !window.Vulpes OculusWeather) return;
+        const w = Vulpes OculusWeather.get();
+        document.getElementById("weatherGateIcon").textContent = w.icon || "🌦️";
+        document.getElementById("weatherGateName").textContent = w.name || "Unbekannt";
+        document.getElementById("weatherGateDesc").textContent = w.description || "";
+        document.getElementById("weatherGateCountdown").textContent = Vulpes OculusWeather.format(Vulpes OculusWeather.msNext());
+      }
+      window.addEventListener("vulpesoculus-weather-changed", drawWeather);
+      setInterval(drawWeather, 1000);
+      drawWeather();
+    })();
+
+    // ===== LIVE NEWS =====
+    (function() {
+      const EVENTS_KEY = "portal_events";
+      function loadEvents() {
+        try { return JSON.parse(localStorage.getItem(EVENTS_KEY)) || []; }
+        catch { return []; }
+      }
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      }
+      const events = loadEvents()
+        .filter(e => e.showInNews)
+        .sort((a,b) => b.updated - a.updated)
+        .slice(0, 4);
+      const box = document.getElementById("liveNews");
+      if (!events.length) {
+        box.innerHTML = '<p class="news-empty">Aktuell keine News. Events mit „In News anzeigen“ erscheinen hier live.</p>';
+        return;
+      }
+      box.innerHTML = events.map(e => {
+        const meta = e.date ? "📅 " + escapeHtml(e.date) : new Date(e.updated).toLocaleString("de-DE");
+        return `<div class="news-item">
+          <h3>${escapeHtml(e.title)}</h3>
+          <div class="meta">${meta}</div>
+          <p>${escapeHtml(e.content || "")}</p>
+        </div>`;
+      }).join("");
+    })();
+
+    // ===== FUCHS + VAMPIR KATZ & MAUS =====
+    (function() {
+      const foxSprueche = [
+        "Na? Schon wieder nur schauen?",
+        "Ich bin der Fuchs. Benehmen!",
+        "Frechheit siegt. Immer.",
+        "Portal hin, Portal her – wo bleibt mein Leckerli?",
+        "Du scrollst, ich beobachte.",
+        "Rules? Kenne ich. Halte ich mich dran? Nö.",
+        "Psst… in der Library liegt was Spannendes.",
+        "Noch ein Klick und ich erzähl dir ein Geheimnis."
+      ];
+      const vampSprueche = [
+        "Ich suche… den Fuchs. 🩸",
+        "Nacht ist mein Freund.",
+        "Wo ist das flauschige Ding?",
+        "Blut… oder Beeren? Beides geht.",
+        "Das Portal gehört auch mir!",
+        "Fang mich – wenn du kannst.",
+        "Ich komme nur vorbei… oder?"
+      ];
+      const chaseDialoge = [
+        { fox: "Nicht schon wieder du!!", vamp: "Diesmal erwisch ich dich!" },
+        { fox: "Zu langsam, Zahnarzt!", vamp: "Steh still, Flauschi!" },
+        { fox: "Katz und Maus – und ich bin die Maus die gewinnt!", vamp: "Wir sehen uns in der Nacht…" },
+        { fox: "Haha, verfehlt!", vamp: "Nächstes Mal…" },
+        { fox: "Lauf, was das Zeug hält!", vamp: "Ich bin schneller als du denkst!" }
+      ];
+
+      const foxEl = document.getElementById("fox");
+      const vampEl = document.getElementById("vamp");
+      const foxBubble = document.getElementById("foxBubble");
+      const vampBubble = document.getElementById("vampBubble");
+      const foxEmoji = document.getElementById("foxEmoji");
+      const vampEmoji = document.getElementById("vampEmoji");
+
+      let foxTimer, vampTimer;
+      let chasing = false;
+
+      function say(bubble, text, ms) {
+        bubble.textContent = text;
+        bubble.classList.add("show");
+        clearTimeout(bubble._t);
+        bubble._t = setTimeout(() => bubble.classList.remove("show"), ms || 4000);
+      }
+
+      function rand(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function place(el, xPct, yPct) {
+        // clear corners
+        el.style.left = el.style.right = el.style.top = el.style.bottom = "auto";
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const x = Math.max(10, Math.min(w - 90, (xPct / 100) * w));
+        const y = Math.max(60, Math.min(h - 100, (yPct / 100) * h));
+        el.style.left = x + "px";
+        el.style.top = y + "px";
+      }
+
+      function randomCorner(el) {
+        const spots = [
+          [5, 85], [90, 85], [5, 70], [88, 70],
+          [10, 50], [85, 55], [50, 80], [70, 75]
+        ];
+        const s = rand(spots);
+        place(el, s[0], s[1]);
+      }
+
+      // --- Fuchs idle ---
+      function foxIdleSay() {
+        if (chasing) return;
+        say(foxBubble, rand(foxSprueche));
+      }
+
+      foxEmoji.addEventListener("click", () => {
+        if (chasing) return;
+        say(foxBubble, rand(foxSprueche));
+      });
+
+      // --- Vampir erscheint / verschwindet ---
+      function showVamp() {
+        if (chasing) return;
+        vampEl.classList.remove("hiding");
+        randomCorner(vampEl);
+        setTimeout(() => say(vampBubble, rand(vampSprueche), 3500), 400);
+        // nach 8–14s entweder jagen oder wieder weg
+        setTimeout(() => {
+          if (Math.random() < 0.65) startChase();
+          else hideVamp();
+        }, 8000 + Math.random() * 6000);
+      }
+
+      function hideVamp() {
+        say(vampBubble, "Bis später… 🌙", 2000);
+        setTimeout(() => {
+          vampEl.classList.add("hiding");
+          scheduleVamp();
+        }, 1500);
+      }
+
+      function scheduleVamp() {
+        // alle 25–50 Sekunden kommt der Vampir
+        const delay = 25000 + Math.random() * 25000;
+        setTimeout(showVamp, delay);
+      }
+
+      // --- Katz & Maus Jagd ---
+      function startChase() {
+        if (chasing) return;
+        chasing = true;
+        foxEl.classList.add("chase");
+        vampEl.classList.add("chase");
+
+        const d = rand(chaseDialoge);
+        say(foxBubble, d.fox, 3000);
+        say(vampBubble, d.vamp, 3000);
+
+        let steps = 0;
+        const maxSteps = 6 + Math.floor(Math.random() * 4);
+
+        function step() {
+          steps++;
+          // Vampir jagt Richtung Fuchs, Fuchs weicht aus
+          const foxRect = foxEl.getBoundingClientRect();
+          const vampRect = vampEl.getBoundingClientRect();
+
+          // Fuchs flieht in andere Ecke
+          const fleeSpots = [
+            [8, 80], [88, 82], [12, 45], [80, 50], [50, 85], [25, 70], [70, 65]
+          ];
+          const fs = rand(fleeSpots);
+          place(foxEl, fs[0], fs[1]);
+
+          // Vampir folgt leicht verzögert in ähnliche Richtung
+          setTimeout(() => {
+            place(vampEl,
+              Math.max(5, Math.min(90, fs[0] + (Math.random() * 20 - 10))),
+              Math.max(40, Math.min(88, fs[1] + (Math.random() * 15 - 5)))
+            );
+          }, 280);
+
+          if (steps < maxSteps) {
+            setTimeout(step, 700 + Math.random() * 400);
+          } else {
+            endChase();
+          }
+        }
+
+        setTimeout(step, 600);
+      }
+
+      function endChase() {
+        const foxWins = Math.random() < 0.6;
+        if (foxWins) {
+          say(foxBubble, "Haha! Zu langsam, Zahnfee!", 4000);
+          say(vampBubble, "Argh… nächstes Mal.", 3500);
+        } else {
+          say(vampBubble, "Beinahe… du hast Glück gehabt.", 4000);
+          say(foxBubble, "Nur beinahe zählt nicht!", 3500);
+        }
+        foxEl.classList.remove("chase");
+        vampEl.classList.remove("chase");
+        setTimeout(() => {
+          chasing = false;
+          hideVamp();
+          // Fuchs zurück in die Ecke
+          foxEl.style.left = foxEl.style.top = "auto";
+          foxEl.style.right = "20px";
+          foxEl.style.bottom = "20px";
+        }, 3500);
+      }
+
+      // Start
+      setTimeout(() => say(foxBubble, "Hallo! Ich bin der Portal-Fuchs. 🦊", 4000), 1000);
+      setInterval(foxIdleSay, 16000);
+      // erster Vampir-Auftritt nach 12–20 Sekunden
+      setTimeout(showVamp, 12000 + Math.random() * 8000);
+    })();
+
+    /* ===== FALLENDE BLÄTTER + NATUR-AMBIENTE (Wind + Uhu) ===== */
+    (function() {
+      // --- Blätter ---
+      const container = document.getElementById("leavesContainer");
+      if (container) {
+        const leafCount = 18;
+        for (let i = 0; i < leafCount; i++) {
+          const leaf = document.createElement("div");
+          const variants = ["", " variant-2", " variant-3", " variant-4"];
+          leaf.className = "leaf" + variants[i % 4];
+          leaf.style.left = Math.random() * 100 + "%";
+          leaf.style.animationDuration = (9 + Math.random() * 12) + "s";
+          leaf.style.animationDelay = (Math.random() * 12) + "s";
+          leaf.style.opacity = 0.45 + Math.random() * 0.4;
+          container.appendChild(leaf);
+        }
+      }
+
+      // --- Natur + Fantasy-Ambient + Uhu + Lautstärke-Regler ---
+      const panel = document.getElementById("ambientPanel");
+      const toggleBtn = document.getElementById("ambientToggle");
+      const volSlider = document.getElementById("ambientVolume");
+      const volLabel = document.getElementById("ambientVolLabel");
+      let isPlaying = false;
+      let owlTimer = null;
+
+      // Natur-Ambient (Nachtwald)
+      const ambient = new Audio("sounds/night-forest.mp3");
+      ambient.loop = true;
+      ambient.preload = "auto";
+
+      // Leise Fantasy-Melodie darüber
+      const fantasy = new Audio("sounds/fantasy-ambient.mp3");
+      fantasy.loop = true;
+      fantasy.preload = "auto";
+
+      // Echter Uhu-Ruf
+      const owl = new Audio("sounds/owl-hoot.mp3");
+      owl.preload = "auto";
+
+      // Lautstärke: Slider steuert alles (Fantasy deutlich leiser)
+      function applyVolume() {
+        const v = (parseInt(volSlider.value, 10) || 0) / 100;
+        ambient.volume = v * 0.15;          // Natur
+        fantasy.volume = v * 0.28;          // Fantasy-Melodie sehr dezent
+        owl.volume = Math.min(1, v * 1.15); // Uhu etwas präsenter
+        if (volLabel) volLabel.textContent = volSlider.value + "%";
+      }
+      applyVolume();
+
+      function scheduleNextOwl() {
+        if (!isPlaying) return;
+        const delay = 22000 + Math.random() * 23000;
+        owlTimer = setTimeout(() => {
+          if (!isPlaying) return;
+          owl.currentTime = 0;
+          owl.play().catch(() => {});
+          scheduleNextOwl();
+        }, delay);
+      }
+
+      function startAmbient() {
+        if (isPlaying) return;
+        applyVolume();
+        ambient.currentTime = 0;
+        fantasy.currentTime = 0;
+        Promise.all([
+          ambient.play().catch(() => {}),
+          fantasy.play().catch(() => {})
+        ]).then(() => {
+          isPlaying = true;
+          if (panel) panel.classList.add("playing");
+          setTimeout(() => {
+            if (isPlaying) {
+              owl.currentTime = 0;
+              owl.play().catch(() => {});
+            }
+          }, 6000 + Math.random() * 6000);
+          scheduleNextOwl();
+        });
+      }
+
+      function stopAmbient() {
+        isPlaying = false;
+        if (owlTimer) { clearTimeout(owlTimer); owlTimer = null; }
+        ambient.pause();
+        fantasy.pause();
+        owl.pause();
+        if (panel) panel.classList.remove("playing");
+      }
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+          if (isPlaying) stopAmbient();
+          else startAmbient();
+        });
+      }
+
+      if (volSlider) {
+        volSlider.addEventListener("input", applyVolume);
+      }
+    })();
+  </script>
+<script src="legal-notice.js"></script>
+</body>
+</html>

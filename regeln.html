@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rules – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vulpesoculus-admin.css">
+  <style>
+    .wrap { max-width: 1100px; margin: auto; padding: 2rem 1.5rem; }
+    .rule-section { margin-bottom: 2rem; }
+    .rule-section h2 { margin-bottom: 1rem; }
+    .rule-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+    .rule-card {
+      cursor: pointer;
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.3rem;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .rule-card:hover { border-color: var(--accent-soft); background: var(--bg-hover); box-shadow: 0 0 20px rgba(168,85,247,.22); }
+    .rule-card h3 { margin: 0 0 .3rem; color: var(--accent-soft); font-size: 1.25rem; }
+    .rule-card .rule-id { display:inline-block; margin-bottom:.45rem; padding:.18rem .45rem; border:1px solid var(--border); border-radius:6px; background:rgba(124,58,237,.08); color:var(--accent); font-family:monospace; font-size:.78rem; font-weight:700; }
+    .inline-rule-id { display:inline-block; margin-right:.35rem; padding:.08rem .3rem; border:1px solid var(--border); border-radius:4px; background:rgba(124,58,237,.08); color:var(--accent); font-family:monospace; font-size:.72rem; font-weight:700; vertical-align:baseline; }
+    .rule-card .domain { font-size: .85rem; color: var(--accent); margin-bottom: .6rem; font-weight: 600; }
+    .rule-card .short-text { font-size: .95rem; color: var(--text-muted); line-height: 1.55; }
+    .rule-card .click-hint { font-size: .75rem; color: var(--purple); margin-top: .7rem; }
+    .rule-card.expanded {
+      grid-column: 1 / -1;
+      border-color: var(--purple);
+      box-shadow: 0 0 24px rgba(124,58,237,.3);
+    }
+    .rule-card .full-text {
+      display: none;
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.7;
+      margin-top: .8rem;
+    }
+    .rule-card.expanded .full-text { display: block; }
+    .rule-card.expanded .short-text { display: none; }
+    .rule-card.expanded .click-hint { display: none; }
+    .rule-card .tile-actions { display: flex; gap: .55rem; margin-top: 1rem; flex-wrap: wrap; }
+    .rule-card .tile-actions .btn { cursor: pointer; }
+    .rule-card .lore-heading {
+      color: var(--accent-soft);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 1.2rem 0 .45rem;
+    }
+    .rule-card .lore-heading:first-child { margin-top: 0; }
+    .rule-card .lore-paragraph { margin: 0 0 .9rem; }
+    .rule-card .lore-list { margin: .35rem 0 1rem 1.4rem; padding: 0; }
+    .rule-card .lore-list li { margin-bottom: .35rem; }
+    .lore-help {
+      margin: 0 0 1rem;
+      padding: .9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(124,58,237,.08);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: .9rem;
+    }
+    .lore-help strong { color: var(--accent-soft); }
+    .lore-help code {
+      padding: .12rem .35rem;
+      border-radius: 5px;
+      background: rgba(0,0,0,.22);
+      color: var(--accent-soft);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <header>
+    <div class="logo-wrap"><div class="logo">Vulpes Oculus</div></div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html" class="active">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Rules</h1>
+    <p class="page-desc">Die Gesetze und Richtlinien, die im Portal gelten. Klicke auf eine Kachel für den vollen Text.</p>
+
+    <section class="admin-panel" id="adminPanel" style="display:none;">
+      <div class="admin-form">
+        <h2 id="formTitle">Neue Regel anlegen</h2>
+
+        <div class="lore-help">
+          <strong>So kannst du den Regeltext schreiben:</strong><br>
+          Leerzeilen erzeugen neue Absätze. Überschriften kannst du mit
+          <code>- Überschrift -</code> oder <code>## Überschrift</code> schreiben.
+          Aufzählungen funktionieren mit <code>- Punkt</code>, <code>• Punkt</code>,
+          <code>* Punkt</code> oder <code>1. Punkt</code>. Du musst kein HTML schreiben.
+        </div>
+
+        <div class="admin-grid">
+          <div class="admin-field">
+            <label>Kategorie *</label>
+            <input id="fCategory" placeholder="z. B. ERP, Bauregeln oder PvP" required>
+          </div>
+          <div class="admin-field">
+            <label>Name *</label>
+            <input id="fName" placeholder="z. B. ERP &amp; Tierdarstellung">
+          </div>
+          <div class="admin-field full">
+            <label>Bereich / Kurzinfo</label>
+            <input id="fDomain" placeholder="RP · ERP · Grenzen">
+          </div>
+          <div class="admin-field full">
+            <label>Regeltext</label>
+            <textarea id="fFull" rows="12" placeholder="- Überschrift -
+
+Dein Regeltext kommt hier hinein.
+
+- Nexte Regel -
+- Erster Punkt
+- Zweiter Punkt"></textarea>
+          </div>
+        </div>
+
+        <div class="admin-actions">
+          <button class="btn" id="btnSave">Save</button>
+          <button class="btn secondary" id="btnCancel" style="display:none;">Abbrechen</button>
+          <span class="admin-status" id="status"></span>
+        </div>
+      </div>
+      <h2 class="admin-sub-title">Vorhandene Rules</h2>
+    </section>
+
+    <div id="contentView">
+      <div id="ruleSections"></div>
+
+      <section class="content-block">
+        <h2>Hinweis</h2>
+        <p>Bei Fragen oder Unklarheiten könnt ihr euch jederzeit an das Support-Team wenden. Diese Rules sorgen für eine immersive und respektvolle Spielwelt für alle Spieler.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer><p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p></footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script src="vulpesoculus-data.js"></script>
+  <script>
+    const DEFAULT_DATA = {
+      bau: [
+        {
+          name: "Bauteile-Beschränkungen",
+          domain: "Bauen · Limits · Fairness",
+          short: "Pro Person 1500 Bauteile, plus 350 pro weiterem Clanmitglied. Deco-Teile max. 500 pro Person.",
+          full: `<p>Um eine faire und performante Servererfahrung zu gewährleisten, gelten die folgenden Bauregeln. Bitte lest diese sorgfältig durch, bevor ihr mit dem Bauen beginnt.</p>
+<h3>Bauteile-Beschränkungen</h3>
+<ul>
+  <li>Pro Person sind 1500 Bauteile erlaubt.</li>
+  <li>Für jeden weiteren Clanmember im Maincharakter gibt es zusätzlich 350 Bauteile.</li>
+  <li>Deco-Teile sind auf 500 pro Person begrenzt (bei 2 Personen sind 1.000 Deco-Teile erlaubt).</li>
+</ul>
+<p><strong>Beispiel:</strong></p>
+<ul>
+  <li>1 Person: 1.500 Bauteile</li>
+  <li>2 Personen: 1.850 Bauteile</li>
+  <li>Fortlaufend pro zusätzlichem Mitglied.</li>
+</ul>
+<h3>Maximale Clan-Größe und Bauteile</h3>
+<ul>
+  <li>Der Maxcap für einen Clan liegt bei 8 Mitgliedern.</li>
+  <li>Der Maxcap für Bauteile pro Clan beträgt 6.000 Teile.</li>
+</ul>`
+        },
+        {
+          name: "Bauplatz & Fertighäuser",
+          domain: "Bauen · Platz · Häuser",
+          short: "Nicht in Sichtweite fremder Basen oder Admingebäude. Fertighäuser pro Clan begrenzt.",
+          full: `<h3>Bauplatzregeln</h3>
+<ul>
+  <li>Baut nicht in Sichtweite anderer Spielerbasen, es sei denn, eine Absprache und Erlaubnis wurde zuvor getroffen.</li>
+  <li>Der Richtwert für die Entfernung ist mittlere Sichtweite.</li>
+  <li>Das Bauen in Sichtweite von Admingebäuden ist nicht erlaubt.</li>
+</ul>
+<h3>Fertighäuser pro Clan</h3>
+<ul>
+  <li>Pro Clan dürfen folgende Fertighäuser platziert werden:
+    <ul>
+      <li>1 großes und 2 kleine Häuser oder</li>
+      <li>2 mittlere Häuser.</li>
+    </ul>
+  </li>
+  <li>Jedes weitere Clanmitglied generiert zusätzlich ein kleines und ein mittleres Haus.</li>
+</ul>
+<h3>Charaktergerechtes Bauen</h3>
+<ul>
+  <li>Wählt euren Bauplatz entsprechend der Rolle und Geschichte eures Charakters aus.</li>
+</ul>
+<h3>Clan-Erstellung</h3>
+<ul>
+  <li>Bitte erstellt einen Clan, auch wenn ihr alleine spielt.</li>
+</ul>
+<h3>Werkbänke</h3>
+<ul>
+  <li>Werkbänke sind nur in einer der Hauptstädte erlaubt und nicht im eigenen Clan.</li>
+</ul>`
+        }
+      ],
+      rp: [
+        {
+          name: "Grundregeln & Respekt",
+          domain: "RP · Respekt · Alter",
+          short: "Mindestalter 18, respektvoller Umgang, IC/OOC-Trennung und kein Metagaming.",
+          full: `<p>Um eine immersive und respektvolle Rollenspielerfahrung für alle Spieler zu gewährleisten, gelten die folgenden Rules.</p>
+<h3>Mindestalter</h3>
+<ul>
+  <li>Um auf unserem Server zu spielen, ist ein Mindestalter von 18 Jahren erforderlich.</li>
+</ul>
+<h3>Charakter- und Discord-Namen</h3>
+<ul>
+  <li>Bitte passe deinen IC-Namen deinem Discord-Namen an.</li>
+</ul>
+<h3>Respektvoller Umgang</h3>
+<ul>
+  <li>Ein respektvoller Umgang im Spiel sowie auf Discord ist Voraussetzung für ein harmonisches Miteinander.</li>
+</ul>
+<h3>Bugusing</h3>
+<ul>
+  <li>Das Ausnutzen von Bugs, Fehlern oder unbeabsichtigten Spielmechaniken ist untersagt.</li>
+</ul>
+<h3>Charakter- und Namenswahl</h3>
+<ul>
+  <li>Vermeidet es, Figuren oder Namen aus Filmen, Spielen oder Serien zu übernehmen. Ähnlichkeiten sind jedoch erlaubt.</li>
+</ul>
+<h3>Charakterfähigkeiten und Alter</h3>
+<ul>
+  <li>Der Altersbereich eures Charakters sollte zu seinen Fähigkeiten passen. Beispiel: Ein 18-jähriger Jäger kann keinen Meisterschuss auf 5 km Entfernung perfekt ausführen.</li>
+</ul>`
+        },
+        {
+          name: "Charakterwechsel & Grenzen",
+          domain: "RP · Wechsel · Grenzen",
+          short: "1 Monat Frist bei Charakterwechsel. Keine Übermächtigkeit, Gods/Halbgötter verboten.",
+          full: `<h3>Charakterwechsel</h3>
+<ul>
+  <li>Einem Charakterwechsel ist eine Frist von 1 Monat auferlegt, um Charakterhopping zu vermeiden. Dies gilt auch für Wechsel zwischen Main und Twink.</li>
+  <li>Alle Charakterwechsel und Main-Twink-Wechsel sowie Story-Charaktere müssen per Ticket angemeldet werden.</li>
+</ul>
+<h3>Keine Übermächtigkeit</h3>
+<ul>
+  <li>Charaktere dürfen nicht übermächtig (unsterblich) sein. Gods und Halbgötter sind nicht erlaubt.</li>
+</ul>
+<h3>Schwangerschaft und Kinder</h3>
+<ul>
+  <li>Schwangerschaften dürfen mit Genehmigung ausgespielt werden. Diese ist mit dem RP-Partner per Ticket anzumelden.</li>
+  <li>Kinder sind als NPCs per Ticket anzumelden und dürfen nicht ins ERP einbezogen werden.</li>
+  <li>Eure Charaktere sollten zudem im Aussehen und Kleidungsstil nicht kindlich wirken.</li>
+</ul>
+<h3>Begleiter</h3>
+<ul>
+  <li>Begleiter (Mounts, NPCs, Tänzerinnen) müssen mit Clan- oder Spielernamen versehen werden.</li>
+  <li>Maximal 5 Begleiter pro Person.</li>
+  <li>Erlaubt ist eine Tänzerin pro Clan.</li>
+  <li>Maximal 5 Handwerker pro Clan (die Tänzerin zählt nicht mit, aber zählt für Einzelspieler im 10er-Cap mit).</li>
+</ul>`
+        },
+        {
+          name: "Charakterwissen & Metagaming",
+          domain: "RP · Wissen · IC/OOC",
+          short: "Dein Charakter darf nur wissen, was er IC erfahren hat. OOC-Wissen darf nicht ins RP übernommen werden.",
+          full: `<h3>Charakterwissen</h3>
+<ul>
+  <li>Dein Charakter darf nur Informationen nutzen, die er im RP selbst erfahren hat.</li>
+  <li>Wissen aus Discord, Streams, OOC-Gesprächen oder dem Beobachten anderer Spieler darf nicht automatisch als Charakterwissen verwendet werden.</li>
+</ul>
+<h3>Metagaming</h3>
+<ul>
+  <li>OOC-Wissen darf nicht verwendet werden, um sich im RP einen Vorteil zu verschaffen.</li>
+</ul>`
+        },
+        {
+          name: "Emotes & Handlungen",
+          domain: "RP · Emotes · Fairness",
+          short: "Wichtige Handlungen gegenüber anderen Charakteren werden ausgespielt. Niemandem werden Reaktionen oder Treffer vorgeschrieben.",
+          full: `<h3>Handlungen ausspielen</h3>
+<ul>
+  <li>Wichtige Handlungen gegenüber anderen Charakteren müssen im RP ausgespielt werden.</li>
+  <li>Schreibt nicht einfach fest, dass ein anderer Charakter getroffen wird, verletzt wird oder auf eine Handlung reagiert.</li>
+  <li>Gebt dem anderen Spieler die Möglichkeit, angemessen auf die Situation zu reagieren.</li>
+</ul>`
+        },
+        {
+          name: "RP-Folgen & Charakterverhalten",
+          domain: "RP · Konsequenzen · Glaubwürdigkeit",
+          short: "Handlungen haben Folgen. Charaktere sind nicht unverwundbar und müssen sich glaubwürdig verhalten.",
+          full: `<h3>RP-Folgen</h3>
+<ul>
+  <li>Handlungen im RP können nachvollziehbare Konsequenzen haben.</li>
+  <li>Charaktere dürfen nicht so gespielt werden, als wären sie unverwundbar oder könnten jede Situation problemlos meistern.</li>
+</ul>
+<h3>Glaubwürdiges Verhalten</h3>
+<ul>
+  <li>Verhaltet euch entsprechend der Geschichte, Fähigkeiten, Verletzungen und aktuellen Situation eures Charakters.</li>
+  <li>Auch starke Charaktere haben Grenzen und Schwächen.</li>
+</ul>`
+        },
+        {
+          name: "RP-Konflikte",
+          domain: "RP · Konflikte · OOC",
+          short: "IC-Konflikte sind erlaubt. OOC-Streit wird nicht ins RP übertragen.",
+          full: `<h3>Konflikte zwischen Charakteren</h3>
+<ul>
+  <li>Streit, Feindschaften und andere Konflikte zwischen Charakteren sind Teil des RP und grundsätzlich erlaubt.</li>
+  <li>Ein IC-Konflikt darf nicht zu einem OOC-Streit zwischen den Spielern werden.</li>
+  <li>Persönliche Probleme zwischen Spielern werden nicht über das RP ausgetragen.</li>
+</ul>
+<h3>Probleme und Regelverstöße</h3>
+<ul>
+  <li>Wenn eine RP-Situation eskaliert oder gegen Rules verstößt, wird sie nicht OOC weiter eskaliert. Wendet euch stattdessen an den Support.</li>
+</ul>`
+        },
+        {
+          name: "RP-Szenen & Loot",
+          domain: "RP · Szenen · Besitz",
+          short: "Laufendes RP nicht grundlos stören. Gegenstände anderer Charaktere dürfen nicht ohne passende RP-Situation genommen werden.",
+          full: `<h3>Laufende RP-Szenen</h3>
+<ul>
+  <li>Stört laufendes RP anderer Spieler nicht absichtlich, wenn ihr keinen nachvollziehbaren IC-Grund dafür habt.</li>
+  <li>Bei Problemen wird die Szene nicht unnötig OOC unterbrochen. Klärt Regel- oder Supportfragen anschließend mit dem Team.</li>
+</ul>
+<h3>Loot und Gegenstände</h3>
+<ul>
+  <li>Gegenstände anderer Charaktere dürfen nicht einfach ohne passende RP-Situation genommen werden.</li>
+  <li>Bei wichtigen oder besonderen Gegenständen sollte vorher geklärt sein, wie damit im RP umgegangen wird.</li>
+</ul>`
+        },
+        {
+          name: "Realistisches Verletzungs-RP",
+          domain: "RP · Verletzungen · Konsequenzen",
+          short: "Verletzungen werden ausgespielt und dürfen nicht einfach ignoriert werden.",
+          full: `<h3>Verletzungen</h3>
+<ul>
+  <li>Verletzungen müssen im RP angemessen berücksichtigt werden.</li>
+  <li>Schwere Verletzungen dürfen nicht einfach ignoriert oder sofort ausgespielt werden, als wären sie folgenlos.</li>
+  <li>Heilung sollte nachvollziehbar und passend zur Verletzung ausgespielt werden.</li>
+</ul>`
+        },
+        {
+          name: "Flucht & Verfolgung",
+          domain: "RP · Flucht · Fairness",
+          short: "Fluchten und Verfolgungen werden ausgespielt. Niemand gewinnt automatisch.",
+          full: `<h3>Fluchten</h3>
+<ul>
+  <li>Fluchten müssen im RP ausgespielt werden.</li>
+  <li>Niemand darf eine Flucht automatisch verhindern oder automatisch gewinnen.</li>
+  <li>Beide Seiten müssen die Möglichkeit haben, angemessen auf die Situation zu reagieren.</li>
+</ul>`
+        },
+        {
+          name: "Charakterentwicklung",
+          domain: "RP · Entwicklung · Geschichte",
+          short: "Charaktere dürfen sich durch Erlebnisse und Erfahrungen nachvollziehbar weiterentwickeln.",
+          full: `<h3>Entwicklung</h3>
+<ul>
+  <li>Charaktere dürfen sich durch ihre Erlebnisse und Erfahrungen verändern.</li>
+  <li>Fehler, Erfolge und Konsequenzen können die Persönlichkeit eines Charakters beeinflussen.</li>
+  <li>Größere Veränderungen sollten nachvollziehbar aus dem bisherigen RP entstehen.</li>
+</ul>`
+        },
+        {
+          name: "Beziehungen im RP",
+          domain: "RP · Beziehungen · OOC",
+          short: "Freundschaften, Feindschaften und andere Beziehungen entstehen durch RP und dürfen niemandem aufgezwungen werden.",
+          full: `<h3>Beziehungen</h3>
+<ul>
+  <li>Freundschaften, Feindschaften und andere Beziehungen sollten sich aus dem RP entwickeln.</li>
+  <li>OOC-Beziehungen zwischen Spielern dürfen nicht automatisch auf die Charaktere übertragen werden.</li>
+  <li>Eine Beziehung zwischen Charakteren darf niemandem aufgezwungen werden.</li>
+</ul>`
+        },
+        {
+          name: "NPCs im RP",
+          domain: "RP · NPCs · Fairness",
+          short: "NPCs dürfen das RP unterstützen, aber nicht dazu genutzt werden, den eigenen Charakter unangemessen mächtig zu machen.",
+          full: `<h3>NPCs</h3>
+<ul>
+  <li>NPCs dürfen für kleinere RP-Szenen verwendet werden.</li>
+  <li>NPCs dürfen nicht dazu benutzt werden, den eigenen Charakter unangemessen mächtig zu machen.</li>
+  <li>Wichtige, einflussreiche oder besondere NPCs sollten vorher mit dem Team abgesprochen werden.</li>
+</ul>`
+        },
+        {
+          name: "Lore-Treue",
+          domain: "RP · Lore · Welt",
+          short: "Charaktere und Handlungen sollen zur Welt von Vulpes Oculus passen.",
+          full: `<h3>Welt und Lore</h3>
+<ul>
+  <li>Charaktere und Handlungen sollten zur Welt von Vulpes Oculus passen.</li>
+  <li>Neue besondere Fähigkeiten, mächtige Wesen oder größere Lore-Ereignisse müssen gegebenenfalls mit dem Team abgesprochen werden.</li>
+  <li>Eigene Ideen sind willkommen, solange sie sich sinnvoll in die Welt einfügen.</li>
+</ul>`
+        },
+        {
+          name: "Tod & Charakterverlust",
+          domain: "RP · Charaktertod · Konsequenzen",
+          short: "Ein dauerhafter Charaktertod wird nicht leichtfertig entschieden und braucht die Zustimmung der betroffenen Person oder eine vorher festgelegte Regelung.",
+          full: `<h3>Charaktertod</h3>
+<ul>
+  <li>Ein Charaktertod sollte nicht leichtfertig entschieden werden.</li>
+  <li>Ein dauerhafter Charaktertod erfolgt nur mit Zustimmung der betroffenen Person oder auf Grundlage einer vorher festgelegten RP-Regelung.</li>
+  <li>Nach einem endgültigen Charaktertod darf der Charakter nicht einfach ohne Nextes weitergespielt werden.</li>
+</ul>`
+        },
+        {
+          name: "Gedächtnis nach Charaktertod",
+          domain: "RP · Wissen · Charakterwechsel",
+          short: "Ein neuer Charakter übernimmt nicht automatisch das Wissen oder die Beziehungen eines vorherigen Charakters.",
+          full: `<h3>Neuer Charakter</h3>
+<ul>
+  <li>Ein neuer Charakter übernimmt nicht automatisch das Wissen eines vorherigen Charakters.</li>
+  <li>Informationen aus dem alten Charakterleben müssen im neuen RP erneut IC erarbeitet werden.</li>
+  <li>Auch frühere Beziehungen oder Feindschaften werden nicht automatisch übernommen.</li>
+</ul>`
+        },
+        {
+          name: "Wichtige RP-Entscheidungen",
+          domain: "RP · Weltveränderungen · Team",
+          short: "Große Veränderungen an Welt, Städten, Fraktionen oder wichtigen Charakteren müssen gegebenenfalls mit dem Team abgestimmt werden.",
+          full: `<h3>Größere Entscheidungen</h3>
+<ul>
+  <li>Große Veränderungen der Welt, von Städten oder Fraktionen dürfen nicht einfach allein entschieden werden.</li>
+  <li>Entscheidungen mit größeren Auswirkungen auf andere Spieler sollten vorher mit dem Team abgestimmt werden.</li>
+</ul>`
+        },
+        {
+          name: "ERP, Abwesenheit & Sonstiges",
+          domain: "RP · ERP · Alltag",
+          short: "ERP/Sklaverei/BDSM nur mit Consent. 31 Tage Abwesenheit = Löschung. Kein Fliegen über Städte.",
+          full: `<h3>ERP, Sklaverei und BDSM</h3>
+<ul>
+  <li>ERP, Sklaverei und BDSM sind auf unserem Server möglich, jedoch keine Pflicht.</li>
+  <li>Niemand darf gegen seinen Willen gezwungen werden, außer dies wurde OOC abgesprochen.</li>
+</ul>
+<h3>Chats und Screenshots</h3>
+<ul>
+  <li>Das Abscreengen von Chats ist untersagt, außer zu Supportzwecken.</li>
+</ul>
+<h3>Abwesenheit</h3>
+<ul>
+  <li>Wenn ihr länger als 31 Tage abwesend seid, werden euer Charakter und eure Base gelöscht.</li>
+</ul>
+<h3>Rechtschreibung</h3>
+<ul>
+  <li>Das Belustigen über die Rechtschreibung anderer ist nicht erwünscht.</li>
+</ul>
+<h3>Fliegen</h3>
+<ul>
+  <li>Das Fliegen über die Stadt oder Spielerbasen ist verboten, aber das Landen daneben ist erlaubt.</li>
+</ul>
+<h3>Wachen</h3>
+<ul>
+  <li>Mitgeführte Wachen müssen im Consent-Sheet eingetragen werden.</li>
+  <li>Sie können per POI an bestimmten Orten positioniert und beschrieben werden.</li>
+  <li>Wachen sollten auch in Emotes beschrieben werden (Aussehen, Standort, Bewaffnung).</li>
+</ul>`
+        },
+        {
+          name: "RP-Begriffe & Codewörter",
+          domain: "RP · Begriffe · Grundlagen",
+          short: "Klare Begriffe für Meta, Power-RP, Fail-RP, IC, OOC und Consent.",
+          full: `<p>Diese Begriffe sollten von allen verstanden werden. Sie beschreiben, was im RP erlaubt ist und was nicht.</p>
+<h3>IC – In Character</h3>
+<ul>
+  <li>Alles, was dein Charakter innerhalb der Spielwelt sagt, weiß oder erlebt.</li>
+</ul>
+<h3>OOC – Out of Character</h3>
+<ul>
+  <li>Alles, was außerhalb des Charakters passiert, zum Beispiel Discord, Support oder Gespräche zwischen Spielern.</li>
+</ul>
+<h3>Metagaming</h3>
+<ul>
+  <li>OOC-Wissen wird als IC-Wissen verwendet.</li>
+</ul>
+<h3>Consent</h3>
+<ul>
+  <li>Consent bedeutet ausdrückliche Zustimmung aller beteiligten Spieler zu bestimmten RP-Inhalten.</li>
+  <li>Besonders bei ERP, Gewalt, Gefangenschaft oder anderen sensiblen Inhalten ist die Zustimmung der Beteiligten zu beachten.</li>
+</ul>
+<h3>ERP</h3>
+<ul>
+  <li>ERP steht für Erotic Roleplay. Es handelt sich um sexuelle Inhalte im Rollenspiel.</li>
+  <li>ERP ist niemals verpflichtend und darf nicht ohne Zustimmung der beteiligten Spieler durchgeführt werden.</li>
+</ul>
+<h3>RP-Codewörter</h3>
+<ul>
+  <li>Serverinterne Codewörter werden verwendet, wenn ein Spieler im RP eine klare Grenze oder einen Abbruch signalisieren möchte.</li>
+  <li>Die konkret gültigen Codewörter werden vom Team festgelegt und sollten von allen Beteiligten bekannt sein.</li>
+</ul>`
+        },
+        {
+          name: "Sklavenregelung",
+          domain: "RP · Sklaverei · Consent",
+          short: "Nichts ohne OOC-Absprache. Consent-Sheet Pflicht. Max. 3 Sklaven für Treiber/Ausbilder.",
+          full: `<p><strong>!!!! Im Sklaven-RP findet NICHTS ohne Absprache statt (OOC-Absprache oder z.B. in Form eines Sklavenvertrages). !!!!</strong></p>
+<ul>
+  <li>Füllt als Sklave sowie als Sklavenmeister bitte euer Consent-Sheet aus.</li>
+  <li>In der Stadt kann man sich als Sklave registrieren oder die Registrierung aufheben.</li>
+  <li>In den Sklavenzellen hinter der Stadt kann man stündlich nach einem Sklavenmeister rufen. (Falls dieser Zeit hat, wird er zeitnah erscheinen – doch auch die Meister und Jäger haben RP.)</li>
+  <li>Der Besitz von Sklaven beschränkt sich auf das Nötigste und/oder dem, was der Meister ihm zur Verfügung stellt.</li>
+  <li>Flüchtigen Sklaven und Sklaven ohne Herren gewähren wir 200 Bauteile. (Baut immersiv. D. h. eher ein Zelt, wenn ihr flüchtig seid, einfache Steinhütte oder Holzhäuschen und keinen Palast.)</li>
+  <li>Flüchtige Sklaven, die gefangen werden wollen, markieren sich bitte entsprechend auf der Map über den RP-Finder auf der Map!</li>
+  <li>Ein Sklave darf nur einen Beruf ausüben. (Bitte beachtet: z. B. als Alchemistin müssen die Zutaten über einen Dritten besorgt werden. Als Heiler müssten dann z. B. die Verbände und/oder Tränke auch über Dritte besorgt werden.)</li>
+  <li>Einem Sklaven muss immer die Möglichkeit gewährt werden, auch ohne den Meister RP zu haben (z. B. durch die Begleitung einer Wache oder einer Aufsichtsperson).</li>
+  <li>Der Meister muss den Sklaven nicht 24/7 bespaßen. Der Sklave kann durch die Aufsicht eines vertrauenswürdigen Dritten RP suchen.</li>
+  <li>Falls ihr einen Sklaven spielen wollt, der sich nicht an die Rules des Meisters hält oder nicht lernfähig ist, dann rechnet auch RPlich mit Konsequenzen (z. B. Zeit alleine in einer Zelle – dem Sklaven muss trotzdem die Möglichkeit gegeben werden, bespielt zu werden bzw. RP finden zu können).</li>
+  <li>Passt euer Sklaven-RP an den Charakter an. Z. B.: Ein mächtiger Sturmdrache wird sich nie einem einfachen Menschlein beugen.</li>
+  <li>Ein normaler Bürger kann sich einen Sklaven halten, ihn aber nicht selber ausbilden oder fangen – dafür gibt es entsprechende Schulen und Sklavenjäger. (Gilt nicht für Sklaven, die schon einen Herren haben, da es ein bestehendes Verhältnis ist.)</li>
+  <li>Wer einen Sklaven hält, egal ob Sklavenmeister oder Bürger, verpflichtet sich, ihm einen angemessenen Schlafplatz, ausreichend Verpflegung und auch medizinische Versorgung zu gewähren. Auch der Beruf, den der Sklave ausübt, sollte ausgespielt werden.</li>
+  <li>Ein Sklaventreiber/Ausbilder (gewählter Beruf) darf insgesamt 3 Sklaven halten, um allen RPlich und zeitlich gerecht zu werden. Sklaven-Treiber/Ausbilder ist eine Rolle und ist dann auch fest vorgegeben – markiert euch bitte entsprechend auf der Map (RP-Finder) und im Bio-Sheet.</li>
+  <li>Sklaven, die er von einem Bürger oder anderem Sklaventreiber einzig zur Ausbildung geschickt bekommt, zählen nicht in den Bestand mit ein. Die Anzahl der drei Sklaven ist begrenzt für jeden Sklavenmeister.</li>
+  <li>Falls ein weiterer Sklavenmeister im Clan ist, kann er nur noch 1 Sklaven mit in den Clan bringen!</li>
+</ul>`
+        }
+      ],
+      char: [
+                {
+          name: "Magieregeln",
+          domain: "Magie · Balance · Konsens",
+          short: "Max. zwei Magiearten + eine reine RP-Magie. Konsenspflicht, Quelle nötig, Nebenwirkungen.",
+          full: `<p>Um die Balance im Spiel zu erhalten und das Rollenspiel zu bereichern, gelten für die Nutzung von Magie die folgenden Rules.</p>
+<h3>Beschränkung der Magiearten pro Charakter</h3>
+<ul>
+  <li>Jeder Charakter darf maximal zwei Magiearten beherrschen.</li>
+  <li>Zusätzlich kann eine reine RP-Magie (z. B. die Verführungsmagie einer Succubus) gewählt werden, die rein dem Rollenspiel dient.</li>
+  <li>Bitte achte darauf, keine gegensätzlichen Magien zu wählen. Beispiel: Wasser- und Feuermagie sind gegensätzlich und können nicht kombiniert werden.</li>
+</ul>
+<h3>Konsensbasierte Magienutzung</h3>
+<ul>
+  <li>Die Wirkung von Magie erfordert stets den Konsens aller Beteiligten.</li>
+  <li>Magie muss immer aus einer Quelle bezogen werden. Beispiel: Ein Feuermagier benötigt eine vorhandene Flamme, um seine Magie wirken zu können.</li>
+</ul>
+<h3>Malus und Nebenwirkungen</h3>
+<ul>
+  <li>Jede Magienutzung hat ihren Preis. Magie kostet Kraft und bringt Nebenwirkungen mit sich.</li>
+  <li>Beispiele dafür sind: Mangelerscheinungen, Brandnarben (für Feuermagier), Kopfschmerzen oder andere belastende Auswirkungen.</li>
+  <li>Es gibt keine festen Grenzen für Nebenwirkungen – sei kreativ, aber spiele sie glaubhaft aus!</li>
+</ul>
+<h3>Kein gottgleiches Verhalten</h3>
+<ul>
+  <li>Magie darf nicht als allmächtig oder als unbesiegbar dargestellt werden.</li>
+  <li>Magie sollte Herausforderungen mit sich bringen und niemals über allem stehen.</li>
+</ul>
+<h3>Passen der Magiefertigkeiten zum Charakter</h3>
+<ul>
+  <li>Die gewählten Magiefertigkeiten sollten glaubwürdig zur Hintergrundgeschichte deines Charakters passen und dessen Persönlichkeit sowie Spielweise unterstützen.</li>
+  <li>Magie sollte das Rollenspiel bereichern, aber nie das Spielerlebnis anderer einschränken oder dominieren.</li>
+</ul>
+<p>Wenn du Fragen zur Magienutzung hast oder Unklarheiten bestehen, wende dich bitte an unsere Moderatoren. Viel Freude beim Erschaffen magischer Geschichten!</p>`
+        }
+      ]
+    };
+
+    const KEY = "regeln";
+    const ABSENCE_RULE = {
+      name: "Abwesenheit",
+      domain: "Abwesenheit · Inaktivität",
+      short: "Längere Abwesenheit sollte angekündigt werden, damit Charaktere und laufendes RP sinnvoll berücksichtigt werden können.",
+      full: "Längere Abwesenheit sollte im vorgesehenen Abwesenheitsbereich angekündigt werden. So können Team und Mitspieler erkennen, dass ein Charakter vorübergehend nicht aktiv gespielt werden kann. Bei längerer Inaktivität können besondere Regelungen für laufendes RP, Charaktere und Besitz greifen."
+    };
+
+    const ERP_RULE = {
+      name: "ERP & Consent",
+      domain: "ERP · Consent · Grenzen · Tierdarstellung",
+      short: "ERP ist freiwillig und nur mit dem klaren Einverständnis aller Beteiligten erlaubt. Grenzen gelten jederzeit und tierische oder nicht-humanoide sexuelle Darstellungen sind ausgeschlossen.",
+      full: `<h3>Grundsatz</h3>
+<ul>
+  <li>ERP ist auf unserem Server möglich, aber niemals Pflicht.</li>
+  <li>Niemand darf zu ERP, sexuellen Handlungen oder einer bestimmten Darstellung gezwungen werden.</li>
+  <li>Alle Beteiligten müssen dem RP freiwillig und eindeutig zustimmen.</li>
+</ul>
+<h3>Consent und persönliche Grenzen</h3>
+<ul>
+  <li>Jede Person darf eigene Grenzen festlegen. Diese sind von allen Beteiligten zu respektieren.</li>
+  <li>Eine Zustimmung kann jederzeit zurückgenommen werden. Das RP wird dann entsprechend angepasst oder beendet.</li>
+  <li>Wenn eine Grenze unklar ist, wird OOC nachgefragt, bevor die Szene fortgesetzt wird.</li>
+  <li>OOC-Konflikte oder Unsicherheiten werden nicht durch Druck im RP gelöst.</li>
+</ul>
+<h3>Absprachen</h3>
+<ul>
+  <li>Besondere Grenzen, sensible Inhalte oder geplante ERP-Szenen können vorab OOC abgesprochen werden.</li>
+  <li>Eine vorherige Absprache ersetzt nicht das laufende Einverständnis. Wenn sich eine Person während des RP unwohl fühlt, gilt ihre aktuelle Grenze.</li>
+  <li>ERP darf nicht als Druckmittel genutzt werden, um andere Spieler zu einer Handlung zu bewegen.</li>
+</ul>
+<h3>Charaktere und Darstellung</h3>
+<ul>
+  <li>ERP findet ausschließlich zwischen erwachsenen Charakteren statt.</li>
+  <li>Kinder oder kindlich dargestellte Charaktere dürfen niemals in ERP einbezogen werden.</li>
+  <li>Charaktere dürfen nicht bewusst kindlich gestaltet werden, um sexuelle Inhalte zu umgehen.</li>
+  <li>Races und Rassen werden grundsätzlich humanoid dargestellt. Tierische Merkmale wie Ohren, Fell oder Schwänze sind erlaubt, solange der Charakter eindeutig humanoid bleibt.</li>
+</ul>
+<h3>Tiere und nicht-humanoide Wesen</h3>
+<ul>
+  <li>Sexuelle Handlungen oder sexuelle Darstellungen mit echten Tieren oder eindeutig tierisch dargestellten Wesen sind verboten.</li>
+  <li>Tierische Begleiter, Haustiere und andere nicht-humanoide Tiere sind vollständig aus ERP ausgeschlossen.</li>
+</ul>
+<h3>BDSM und besondere Inhalte</h3>
+<ul>
+  <li>BDSM und andere besondere ERP-Inhalte sind nur erlaubt, wenn alle beteiligten Spieler ausdrücklich zustimmen.</li>
+  <li>Niemand muss Inhalte mitspielen, die außerhalb der eigenen Grenzen liegen.</li>
+  <li>Bei Unsicherheit gilt: lieber vorher nachfragen als eine Grenze überschreiten.</li>
+</ul>
+<h3>OOC und Support</h3>
+<ul>
+  <li>Persönliche Grenzen müssen nicht öffentlich erklärt werden.</li>
+  <li>Bei einem Streit über Consent oder einen Regelverstoß kann das Support-Team hinzugezogen werden.</li>
+</ul>`
+    };
+
+    let editCategory = null;
+    let editIndex = null;
+    let expandedKey = null;
+
+    const el = id => document.getElementById(id);
+    const esc = Vulpes OculusData.esc;
+
+    function admin() {
+      return Vulpes OculusData.isAdmin();
+    }
+
+    function getLocalData() {
+      try {
+        const raw = localStorage.getItem("portal_regeln_data_v2");
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+
+    function ensureShape(data) {
+      const result = {};
+      if (data && typeof data === "object") {
+        Object.keys(data).forEach(key => {
+          if (Array.isArray(data[key])) result[key] = data[key];
+        });
+      }
+      if (!Array.isArray(result.bau)) result.bau = [];
+      if (!Array.isArray(result.rp)) result.rp = [];
+      if (!Array.isArray(result.char)) result.char = [];
+      return result;
+    }
+
+    function categoryLabel(key) {
+      const labels = {
+        grund: "Grundregeln",
+        rp: "Rollenspiel",
+        erp: "ERP & Consent",
+        gefangenschaft: "Gefangenschaft & Sklaverei",
+        stadt: "Stadtregeln",
+        charakter: "Charakter & Charakterwechsel",
+        magie: "Magie",
+        bau: "Bauregeln",
+        abwesenheit: "Abwesenheit",
+        chat: "Chat, OOC & Discord",
+        begriffe: "RP-Begriffe & Codewörter"
+      };
+      return labels[key] || key;
+    }
+
+    function reorganizeRules(data) {
+      const result = {};
+      const ensure = key => { if (!Array.isArray(result[key])) result[key] = []; };
+
+      Object.keys(data || {}).forEach(category => {
+        if (!Array.isArray(data[category])) return;
+        data[category].forEach(rule => {
+          const name = String(rule.name || "").toLowerCase();
+          let target = category;
+
+          if (name.includes("erp") || name.includes("tierdarstellung") || name.includes("zoophilie")) target = "erp";
+          else if (name.includes("sklaven") || name.includes("gefangenschaft")) target = "gefangenschaft";
+          else if (name.includes("wachen") || name.includes("fliegen") || name.includes("werkbank") || name.includes("stadt")) target = "stadt";
+          else if (name.includes("abwesenheit")) target = "abwesenheit";
+          else if (name.includes("chat") || name.includes("screenshot") || name.includes("rechtschreibung") || name.includes("discord")) target = "chat";
+          else if (name.includes("charakterwechsel") || name.includes("charakter-änderung") || name.includes("charakteränderung")) target = "charakter";
+          else if (name.includes("magieregel") || name.includes("magie")) target = "magie";
+          else if (name.includes("bau")) target = "bau";
+          else if (name.includes("rp-begriff") || name.includes("codewörter")) target = "begriffe";
+          else if (name.includes("grundregeln")) target = "grund";
+          else if (category === "char") target = "charakter";
+          else if (category === "rp") target = "rp";
+
+          ensure(target);
+          result[target].push(rule);
+        });
+      });
+      return result;
+    }
+
+    const RULE_SECTION_NUMBERS = {
+      bau: 1,
+      rp: 2,
+      erp: 3,
+      gefangenschaft: 4,
+      stadt: 5,
+      charakter: 6,
+      magie: 7,
+      abwesenheit: 8,
+      chat: 9,
+      begriffe: 10
+    };
+
+    function letterFromNumber(number) {
+      let n = Number(number) || 1;
+      let result = "";
+      while (n > 0) {
+        n--;
+        result = String.fromCharCode(65 + (n % 26)) + result;
+        n = Math.floor(n / 26);
+      }
+      return result;
+    }
+
+    function ruleId(category, number) {
+      const section = RULE_SECTION_NUMBERS[category] || 99;
+      return `R-${section}-${letterFromNumber(number)}`;
+    }
+
+    function addRuleIdsToHtml(html, category, counter) {
+      let next = counter;
+      const source = String(html || "");
+
+      const result = source.replace(/<li(\\s[^>]*)?>/gi, match => {
+        const id = ruleId(category, next++);
+        return `<li${match.slice(3, -1)}><span class="inline-rule-id">${esc(id)}</span> `;
+      });
+
+      return { html: result, next };
+    }
+
+    function ensureRuleIds(data) {
+      return data && typeof data === "object" ? data : {};
+    }
+
+    function categoryKey(name) {
+      const value = String(name || "").trim();
+      if (!value) return "";
+      const known = {
+        "bauregeln": "bau",
+        "rollenspielregeln": "rp",
+        "charakter & magie": "char"
+      };
+      const lower = value.toLowerCase();
+      if (known[lower]) return known[lower];
+
+      return value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "sonstige";
+    }
+
+    function getData() {
+      const shared = Vulpes OculusData.load(KEY);
+      if (shared && (shared.bau || shared.rp || shared.char)) {
+        return ensureShape(shared);
+      }
+
+      const localOld = getLocalData();
+      if (localOld && (localOld.bau || localOld.rp || localOld.char)) {
+        return ensureShape(localOld);
+      }
+
+      return ensureShape(DEFAULT_DATA);
+    }
+
+    function cleanAndSplitRules(data) {
+      const result = {};
+      const ensure = key => { if (!Array.isArray(result[key])) result[key] = []; };
+
+      // Alte Sammelregel auflösen, damit ERP, Abwesenheit und Alltag nicht vermischt bleiben.
+      const legacySplit = {
+        erp: {
+          name: "ERP & Consent",
+          domain: "ERP · Grenzen · Zustimmung",
+          short: "ERP ist freiwillig und darf nur mit Zustimmung aller Beteiligten stattfinden.",
+          full: "- Grundsatz -\n\nERP ist auf unserem Server möglich, aber niemals Pflicht. Niemand darf gegen seinen Willen zu ERP gezwungen werden. Besondere Grenzen werden OOC abgesprochen und sind jederzeit zu respektieren."
+        },
+        abwesenheit: {
+          name: "Abwesenheit",
+          domain: "Abwesenheit · Inaktivität",
+          short: "Bei mehr als 31 Tagen Abwesenheit werden Charakter und Base gelöscht.",
+          full: "- Abwesenheit -\n\nWenn ihr länger als 31 Tage abwesend seid, werden euer Charakter und eure Base gelöscht."
+        },
+        chat: {
+          name: "Chats & Screenshots",
+          domain: "OOC · Support",
+          short: "Chats dürfen nur für Supportzwecke gescreenshottet oder weitergegeben werden.",
+          full: "- Chats & Screenshots -\n\nDas Screenshottieren oder Nextgeben von Chats ist untersagt, außer zu Supportzwecken."
+        },
+        stadt: {
+          name: "Fliegen & Wachen",
+          domain: "Stadt · Reisen · Wachen",
+          short: "Fliegen über Städte und Spielerbasen ist verboten. Wachen müssen eingetragen und ausgespielt werden.",
+          full: "- Fliegen -\n\nDas Fliegen über Städte oder Spielerbasen ist verboten. Das Landen daneben ist erlaubt.\n\n- Wachen -\n\nMitgeführte Wachen müssen im Consent-Sheet eingetragen werden. Sie können per POI positioniert und in Emotes mit Aussehen, Standort und Bewaffnung beschrieben werden."
+        },
+        chat2: {
+          name: "Rechtschreibung & Umgang",
+          domain: "Community · Respekt",
+          short: "Niemand soll wegen Rechtschreibung oder Schreibfehlern lächerlich gemacht werden.",
+          full: "- Umgang -\n\nDas Belustigen über die Rechtschreibung anderer ist nicht erwünscht."
+        }
+      };
+
+      const removeNames = new Set([
+        "erp, abwesenheit & sonstiges",
+        "erp & consent",
+        "erp & grenzen",
+        "erp & tierdarstellung",
+        "erp & tierdarstellung",
+        "stadtordnung",
+        "fliegen über städte & spielerbasen",
+        "wachen",
+        "werkbänke & öffentliche infrastruktur",
+        "power-rp",
+        "metagaming",
+        "fail-rp",
+        "emotes",
+        "konflikte & gewalt-rp",
+        "laufende rp-szenen",
+        "gefange­nschaft & sklaverei",
+        "gefangenschaft & sklaverei",
+        "charakterkonzept & fähigkeiten",
+        "charakterwechsel & twinks",
+        "verletzungen & konsequenzen",
+        "ooc-kommunikation"
+      ]);
+
+      Object.keys(data || {}).forEach(category => {
+        if (!Array.isArray(data[category])) return;
+        data[category].forEach(rule => {
+          const name = String(rule.name || "").trim().toLowerCase();
+          if (removeNames.has(name)) return;
+
+          // Alte Kategorie "char" wird später sauber zu "charakter".
+          const target = category === "char" ? "charakter" : category;
+          ensure(target);
+          result[target].push(rule);
+        });
+      });
+
+      const addUnique = (category, rule) => {
+        ensure(category);
+        const exists = result[category].some(r => String(r.name || "").trim().toLowerCase() === rule.name.toLowerCase());
+        if (!exists) result[category].push(rule);
+      };
+
+      // Muss vor der ersten Verwendung definiert sein.
+      const removeRules = (names) => {
+        const unwanted = new Set(names.map(n => n.toLowerCase()));
+        Object.keys(result).forEach(category => {
+          result[category] = (result[category] || []).filter(rule =>
+            !unwanted.has(String(rule.name || "").trim().toLowerCase())
+          );
+        });
+      };
+
+      // Nur die tatsächlich getrennten Rules aus der alten Sammelregel ergänzen.
+      const oldMixed = Object.values(data || {}).flat().find(r => String(r?.name || "").trim().toLowerCase() === "erp, abwesenheit & sonstiges");
+      if (oldMixed) {
+        Object.keys(legacySplit).forEach(key => {
+          if (key === "chat2") return;
+          addUnique(key, legacySplit[key]);
+        });
+        addUnique("chat", legacySplit.chat2);
+      }
+
+      // Alte ERP-Kacheln entfernen und durch die gemeinsame, vollständige ERP-Regel ersetzen.
+      removeRules(["ERP & Consent", "ERP & Grenzen", "ERP & Tierdarstellung"]);
+      if (typeof ERP_RULE !== "undefined") addUnique("erp", ERP_RULE);
+      if (typeof ABSENCE_RULE !== "undefined") addUnique("abwesenheit", ABSENCE_RULE);
+
+      // Die RP-Rules bewusst zu wenigen, verständlichen Kacheln zusammenfassen.
+      // Ziel: "Was muss ich wissen?" statt einer langen Liste einzelner Kleinstregeln.
+      const findRule = (names) => {
+        const wanted = new Set(names.map(n => n.toLowerCase()));
+        for (const category of Object.keys(result)) {
+          const found = (result[category] || []).find(rule => wanted.has(String(rule.name || "").trim().toLowerCase()));
+          if (found) return found;
+        }
+        return null;
+      };
+
+      const combine = (category, name, domain, short, names, fallback) => {
+        const sources = names.map(name => findRule([name])).filter(Boolean);
+        const existing = findRule([name]);
+
+        if (!sources.length && existing) return;
+        if (!sources.length && !fallback) return;
+
+        removeRules([name, ...names]);
+
+        const full = sources.length
+          ? sources.map(rule => rule.full || rule.short || "").filter(Boolean).join("\n")
+          : fallback;
+
+        addUnique(category, { name, domain, short, full });
+      };
+
+      // Grundregeln gehören nicht in den RP-Block.
+      const grund = findRule(["Grundregeln & Respekt"]);
+      if (grund) {
+        removeRules(["Grundregeln & Respekt"]);
+        addUnique("grund", grund);
+      }
+
+      combine(
+        "rp",
+        "RP-Spielweise & Fairness",
+        "RP · IC/OOC · Emotes · Konsequenzen",
+        "Die wichtigsten Rules für faires und glaubwürdiges RP: Charakterwissen, Emotes, Konflikte, Verletzungen, Flucht und Konsequenzen.",
+        [
+          "Charakterwissen & Metagaming",
+          "Emotes & Handlungen",
+          "RP-Folgen & Charakterverhalten",
+          "RP-Konflikte",
+          "RP-Szenen & Loot",
+          "Realistisches Verletzungs-RP",
+          "Flucht & Verfolgung"
+        ],
+        "- Charakterwissen & Metagaming -\n\nNutze im RP nur Wissen, das dein Charakter IC erfahren hat. OOC-Wissen aus Discord, Streams oder Gesprächen darf nicht als Vorteil verwendet werden.\n\n- Emotes & Handlungen -\n\nWichtige Handlungen werden ausgespielt. Schreibe anderen Spielern keine Treffer, Verletzungen oder Reaktionen vor.\n\n- Konsequenzen -\n\nHandlungen können Folgen haben. Charaktere sind nicht unverwundbar und sollen glaubwürdig auf Situationen und Verletzungen reagieren.\n\n- Konflikte -\n\nIC-Konflikte bleiben IC. OOC-Streit wird nicht über das RP ausgetragen. Bei Regelproblemen hilft der Support.\n\n- Szenen & Besitz -\n\nLaufendes RP wird nicht grundlos gestört. Gegenstände anderer Charaktere werden nicht ohne passende RP-Situation genommen.\n\n- Flucht & Verfolgung -\n\nNiemand gewinnt eine Flucht oder Verfolgung automatisch. Beide Seiten bekommen die Möglichkeit zu reagieren."
+      );
+
+      combine(
+        "charakter",
+        "Charakter & Entwicklung",
+        "Charakter · Wechsel · Entwicklung · Beziehungen",
+        "Charakterwechsel, Entwicklung, Beziehungen, Verletzungen und Charaktertod sollen nachvollziehbar und fair ausgespielt werden.",
+        [
+          "Charakterwechsel & Grenzen",
+          "Charakterentwicklung",
+          "Beziehungen im RP",
+          "Tod & Charakterverlust",
+          "Gedächtnis nach Charaktertod"
+        ],
+        "- Charakterwechsel -\n\nCharakterwechsel und Main-Twink-Wechsel haben eine Frist von 1 Monat und müssen per Ticket angemeldet werden.\n\n- Entwicklung -\n\nCharaktere dürfen sich durch Erlebnisse, Fehler und Erfahrungen nachvollziehbar verändern.\n\n- Beziehungen -\n\nBeziehungen entstehen aus dem RP und dürfen niemandem aufgezwungen werden. OOC-Beziehungen werden nicht automatisch auf Charaktere übertragen.\n\n- Charaktertod -\n\nEin dauerhafter Charaktertod wird nicht leichtfertig entschieden und erfolgt nur mit Zustimmung der betroffenen Person oder einer vorher festgelegten RP-Regelung.\n\n- Neues Charakterleben -\n\nEin neuer Charakter übernimmt nicht automatisch Wissen, Beziehungen oder Feindschaften eines früheren Charakters."
+      );
+
+      combine(
+        "rp",
+        "Welt, Lore & NPCs",
+        "RP · Lore · NPCs · Weltveränderungen",
+        "NPCs und eigene Ideen sind erlaubt, müssen aber zur Welt passen und dürfen nicht für unangemessene Vorteile genutzt werden.",
+        [
+          "NPCs im RP",
+          "Lore-Treue",
+          "Wichtige RP-Entscheidungen"
+        ],
+        "- NPCs -\n\nNPCs dürfen das RP unterstützen, aber nicht dazu genutzt werden, den eigenen Charakter unangemessen mächtig zu machen. Wichtige NPCs werden vorher mit dem Team abgesprochen.\n\n- Lore -\n\nCharaktere und Handlungen sollen zur Welt von Vulpes Oculus passen. Besondere Fähigkeiten, mächtige Wesen oder größere Lore-Ereignisse müssen gegebenenfalls mit dem Team abgesprochen werden.\n\n- Große Entscheidungen -\n\nGrößere Veränderungen an Welt, Städten oder Fraktionen werden nicht allein entschieden, wenn andere Spieler davon betroffen sind."
+      );
+
+      // Bauregeln ebenfalls auf eine verständliche Hauptkachel reduzieren.
+      const bau1 = findRule(["Bauteile-Beschränkungen"]);
+      const bau2 = findRule(["Bauplatz & Fertighäuser"]);
+      if (bau1 || bau2) {
+        removeRules(["Bauregeln"]);
+        const bauRules = [bau1, bau2].filter(Boolean);
+        removeRules(bauRules.map(r => r.name));
+        addUnique("bau", {
+          name: "Bauen & Bauplätze",
+          domain: "Bauen · Limits · Bauplätze",
+          short: "Bauteile, Bauplätze, Fertighäuser, Clangröße und Werkbänke auf einen Blick.",
+          full: bauRules.map(r => r.full || r.short || "").join("\n")
+        });
+      }
+
+      return result;
+    }
+
+    function formatRuleText(text) {
+      if (!text) return "";
+
+      const value = String(text)
+        .replace(/\r\n/g, "\n")
+        .replace(/\n/g, "\n")
+        .replace(/\r/g, "\n");
+
+      // Bestehende Rules dürfen weiterhin HTML enthalten.
+      if (/<[a-z][\s\S]*>/i.test(value)) return value;
+
+      const parts = [];
+      let listItems = [];
+
+      const flushList = () => {
+        if (!listItems.length) return;
+        parts.push("<ul class=\"lore-list\">" + listItems.map(item => "<li>" + esc(item) + "</li>").join("") + "</ul>");
+        listItems = [];
+      };
+
+      value.split("\n").forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          flushList();
+          return;
+        }
+
+        const bullet = trimmed.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
+        if (bullet) {
+          listItems.push(bullet[1]);
+          return;
+        }
+
+        flushList();
+
+        const heading = trimmed.match(/^-+\s*(.+?)\s*-+$/);
+        if (heading) {
+          parts.push("<h4 class=\"lore-heading\">" + esc(heading[1]) + "</h4>");
+          return;
+        }
+
+        const markdownHeading = trimmed.match(/^#{1,4}\s+(.+)$/);
+        if (markdownHeading) {
+          parts.push("<h4 class=\"lore-heading\">" + esc(markdownHeading[1]) + "</h4>");
+          return;
+        }
+
+        parts.push("<p class=\"lore-paragraph\">" + esc(trimmed) + "</p>");
+      });
+
+      flushList();
+      return parts.join("");
+    }
+
+    function htmlToEditorText(value) {
+      if (!value) return "";
+
+      const source = String(value).trim();
+      if (!/<[a-z][\s\S]*>/i.test(source)) return source;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(source, "text/html");
+      const lines = [];
+
+      function walk(node) {
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+        const tag = node.tagName.toLowerCase();
+
+        if (/^h[1-6]$/.test(tag)) {
+          const text = node.textContent.trim();
+          if (text) lines.push("- " + text + " -");
+          lines.push("");
+          return;
+        }
+
+        if (tag === "li") {
+          const text = node.textContent.trim();
+          if (text) lines.push("- " + text);
+          return;
+        }
+
+        if (tag === "p") {
+          const text = node.textContent.trim();
+          if (text) lines.push(text);
+          lines.push("");
+          return;
+        }
+
+        if (tag === "ul" || tag === "ol") {
+          Array.from(node.children).forEach(walk);
+          lines.push("");
+          return;
+        }
+
+        Array.from(node.children).forEach(walk);
+      }
+
+      Array.from(doc.body.children).forEach(walk);
+
+      if (!lines.length) return doc.body.textContent.trim();
+
+      return lines.join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function makeCard(item, category, index) {
+      const card = document.createElement("article");
+      const key = category + "-" + index;
+      card.className = "rule-card" + (expandedKey === key ? " expanded" : "");
+
+      card.innerHTML = `
+        <h3>${esc(item.name || "Unbenannte Regel")}</h3>
+        <div class="domain">${esc(item.domain || "")}</div>
+        ${item.short ? `<p class="short-text">${esc(item.short)}</p>` : ""}
+        <div class="full-text">${formatRuleText(item.full || item.short || "")}</div>
+        <div class="click-hint">Klicken zum Aufklappen →</div>
+        ${admin() ? `<div class="tile-actions">
+          <button class="btn secondary" data-edit>Edit</button>
+          <button class="btn danger" data-del>Delete</button>
+        </div>` : ""}
+      `;
+
+      card.querySelector("[data-edit]")?.addEventListener("click", e => {
+        e.stopPropagation();
+        startEdit(category, index);
+      });
+
+      card.querySelector("[data-del]")?.addEventListener("click", e => {
+        e.stopPropagation();
+        removeRule(category, index);
+      });
+
+      card.addEventListener("click", e => {
+        if (e.target.closest("button")) return;
+        expandedKey = expandedKey === key ? null : key;
+        render();
+      });
+
+      return card;
+    }
+
+    function render() {
+      let data = getData();
+      data = cleanAndSplitRules(data);
+      data = reorganizeRules(data);
+      data = ensureRuleIds(data);
+
+      el("adminPanel").style.display = admin() ? "block" : "none";
+
+      const sections = el("ruleSections");
+      sections.innerHTML = "";
+
+      Object.keys(data).forEach(category => {
+        if (!Array.isArray(data[category]) || !data[category].length) return;
+
+        const section = document.createElement("section");
+        section.className = "rule-section";
+        section.innerHTML = `
+          <h2>${esc(categoryLabel(category))}</h2>
+          <div class="rule-grid"></div>
+        `;
+
+        const grid = section.querySelector(".rule-grid");
+        let ruleCounter = 1;
+        data[category].forEach((item, i) => {
+          const prepared = addRuleIdsToHtml(item.full || item.short || "", category, ruleCounter);
+          ruleCounter = prepared.next;
+          const itemCopy = { ...item, full: prepared.html };
+          grid.appendChild(makeCard(itemCopy, category, i));
+        });
+        sections.appendChild(section);
+      });
+    }
+
+    function resetForm() {
+      editCategory = null;
+      editIndex = null;
+      el("formTitle").textContent = "Neue Regel anlegen";
+      el("fCategory").value = "rp";
+      el("fName").value = "";
+      el("fDomain").value = "";
+      el("fFull").value = "";
+      el("btnSave").textContent = "Save";
+      el("btnCancel").style.display = "none";
+      el("status").textContent = "";
+    }
+
+    function startEdit(category, index) {
+      const data = ensureRuleIds(reorganizeRules(getData()));
+      const rule = data[category]?.[index];
+      if (!rule) return;
+
+      editCategory = category;
+      editIndex = index;
+
+      el("formTitle").textContent = "Regel bearbeiten";
+      el("fCategory").value = categoryLabel(category);
+      el("fName").value = rule.name || "";
+      el("fDomain").value = rule.domain || "";
+      el("fFull").value = htmlToEditorText(rule.full || rule.short || "");
+      el("btnSave").textContent = "Änderungen speichern";
+      el("btnCancel").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function removeRule(category, index) {
+      const data = reorganizeRules(getData());
+      const rule = data[category]?.[index];
+      if (!rule) return;
+
+      if (!confirm("Diese Regel wirklich löschen?")) return;
+
+      data[category].splice(index, 1);
+
+      try {
+        ensureRuleIds(data);
+        await Vulpes OculusData.save(KEY, data);
+        if (editCategory === category && editIndex === index) resetForm();
+        expandedKey = null;
+        el("status").style.color = "#22c55e";
+        el("status").textContent = "✓ Regel gelöscht";
+        render();
+        setTimeout(() => { el("status").textContent = ""; }, 2000);
+      } catch (err) {
+        console.error("[Rules] Delete fehlgeschlagen:", err);
+        el("status").style.color = "#f87171";
+        el("status").textContent = "✗ Delete in der Datenbank fehlgeschlagen";
+      }
+    }
+
+    async function save() {
+      const categoryName = el("fCategory").value.trim();
+      const category = categoryKey(categoryName);
+      const name = el("fName").value.trim();
+      const domain = el("fDomain").value.trim();
+      const full = el("fFull").value.trim();
+
+      if (!categoryName) {
+        el("status").style.color = "#f87171";
+        el("status").textContent = "Bitte eine Kategorie eingeben.";
+        return;
+      }
+
+      if (!name) {
+        el("status").style.color = "#f87171";
+        el("status").textContent = "Bitte einen Namen eingeben.";
+        return;
+      }
+
+      const data = ensureRuleIds(reorganizeRules(cleanAndSplitRules(getData())));
+      const entry = { name, domain, full };
+
+      if (editCategory !== null && editIndex !== null && data[editCategory]?.[editIndex]) {
+        if (editCategory === category) {
+          data[category][editIndex] = entry;
+        } else {
+          data[editCategory].splice(editIndex, 1);
+          data[category].push(entry);
+        }
+      } else {
+        data[category].push(entry);
+      }
+
+      el("btnSave").disabled = true;
+      el("status").style.color = "";
+      el("status").textContent = "Speichere in der Datenbank …";
+
+      try {
+        await Vulpes OculusData.save(KEY, data);
+        resetForm();
+        expandedKey = null;
+        el("status").style.color = "#22c55e";
+        el("status").textContent = "✓ In der Datenbank gespeichert";
+        render();
+        setTimeout(() => { el("status").textContent = ""; }, 2500);
+      } catch (err) {
+        console.error("[Rules] Save fehlgeschlagen:", err);
+        el("status").style.color = "#f87171";
+        el("status").textContent = "✗ Save in der Datenbank fehlgeschlagen";
+      } finally {
+        el("btnSave").disabled = false;
+      }
+    }
+
+    el("btnSave").onclick = save;
+    el("btnCancel").onclick = resetForm;
+
+    // Alte lokale Regeldaten werden einmalig als Ausgangspunkt übernommen.
+    (async function init() {
+      // Vor der Bereinigung zuerst den aktuellen Stand aus MySQL laden.
+      // So arbeitet die Admin-Seite nicht versehentlich mit alten lokalen Rules.
+      try {
+        await Vulpes OculusStorage.load(KEY);
+        await Vulpes OculusData.syncFromRemote();
+      } catch (e) {
+        console.warn("[Rules] Remote-Daten konnten vor der Bereinigung nicht geladen werden:", e);
+      }
+
+      let data = getData();
+      const before = JSON.stringify(data);
+
+      if (admin()) {
+        data = cleanAndSplitRules(data);
+        data = reorganizeRules(data);
+        data = ensureRuleIds(data);
+        if (JSON.stringify(data) !== before || getLocalData()) {
+          try {
+            await Vulpes OculusData.save(KEY, data);
+            localStorage.removeItem("portal_regeln_data_v2");
+          } catch (e) {
+            console.warn("[Rules] Bereinigung der Regeldaten fehlgeschlagen:", e);
+          }
+        }
+      }
+
+      render();
+    })();
+
+    window.addEventListener("storage", render);
+    document.addEventListener("vulpesoculus-data-synced", render);
+  </script>
+  <script src="legal-notice.js"></script>
+</body>
+</html>

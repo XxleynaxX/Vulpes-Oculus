@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vulpesoculus-admin.css">
+<style>.wiki-controls{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}.library-search{flex:1;min-width:220px;padding:.7rem;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--text)}.library-category{padding:.7rem;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--text)}.library-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}.library-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1rem}.library-card h3{color:var(--purple-bright);margin:.4rem 0}.library-card p{color:var(--text-muted);font-size:.9rem;line-height:1.5}.library-tag{font-size:.72rem;color:var(--purple);border:1px solid var(--border);border-radius:999px;padding:.15rem .45rem}</style><style>
+    .lore-help{margin:.7rem 0;padding:.8rem 1rem;border:1px solid var(--border);border-radius:10px;background:rgba(124,58,237,.08);color:var(--text);line-height:1.6;font-size:.9rem}
+    .lore-help strong{color:var(--accent-soft)} .lore-help code{padding:.1rem .3rem;border-radius:5px;background:rgba(0,0,0,.22);color:var(--accent-soft)}
+    .lore-heading{color:var(--accent-soft);font-size:1.1rem;margin:1.1rem 0 .4rem}.lore-heading:first-child{margin-top:0}.lore-paragraph{margin:0 0 .8rem}.lore-list{margin:.3rem 0 .9rem 1.4rem;padding:0}.lore-list li{margin-bottom:.3rem}
+  </style></head>
+<body>
+  <div class="bg-overlay"></div>
+    <header>
+    <div class="logo-wrap">
+      <div class="logo">Vulpes Oculus</div>
+    </div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html" class="active">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">Library</h1>
+    <p class="page-desc">Bücher, Schriften und Archive. Schreiben nach Login als Library oder Admin (Login über Discord in der Menüleiste).</p>
+
+    <div class="wiki-controls"><input id="librarySearch" class="library-search" placeholder="🔎 Library durchsuchen..."><select id="libraryCategory" class="library-category"><option value="">Alle Kategorien</option><option>Geschichte</option><option>Mythen</option><option>Magie</option><option>Creatures</option><option>Gods</option><option>Orte</option><option>Personen</option><option>Schriften</option><option>Sonstiges</option></select><button class="btn secondary" id="btnNewTopic" style="display:none;">+ Neuer Eintrag</button>
+      <span id="status" style="margin-left:1rem;font-size:0.9rem;opacity:0.8;"></span>
+    </div>
+
+    <div id="listView">
+      <div class="library-grid" id="topicList"></div>
+      <div class="empty" id="emptyState" style="display:none;">
+        Noch keine Einträge vorhanden.
+      </div>
+    </div>
+
+    <div id="viewTopic" style="display:none;">
+      <div class="card">
+        <h2 id="viewTitle"></h2>
+        <div class="topic-meta" id="viewMeta"></div>
+        <div class="topic-content" id="viewContent"></div>
+        <div class="topic-actions" id="viewActions" style="display:none;">
+          <button class="btn" id="btnEdit">Edit</button>
+          <button class="btn danger" id="btnDelete">Delete</button>
+        </div>
+        <button class="btn secondary" id="btnBack" style="margin-top:1rem;">← Back zur Liste</button>
+      </div>
+    </div>
+
+    <div class="editor-area" id="editorArea">
+      <div class="card">
+        <h3 id="editorTitle">Neuer Eintrag</h3>
+        <div class="form-group">
+          <label for="inputTitle">Titel</label>
+          <input type="text" id="inputTitle" placeholder="Titel des Eintrags...">
+        </div>
+        <div class="form-group">
+          <label for="inputCategory">Kategorie</label><select id="inputCategory"><option>Geschichte</option><option>Mythen</option><option>Magie</option><option>Creatures</option><option>Gods</option><option>Orte</option><option>Personen</option><option>Schriften</option><option>Sonstiges</option></select>
+          <label for="inputContent">Inhalt</label>
+          <div class="lore-help">
+            <strong>So schreibst du deinen Text:</strong><br>
+            Leerzeilen erzeugen neue Absätze. Überschriften mit
+            <code>- Überschrift -</code> oder <code>## Überschrift</code>.
+            Aufzählungen mit <code>- Punkt</code>, <code>• Punkt</code>,
+            <code>* Punkt</code> oder <code>1. Punkt</code>. Kein HTML nötig.
+          </div>
+          <textarea id="inputContent" placeholder="Schreibe hier den Inhalt..."></textarea>
+        </div>
+        <div style="display:flex; gap:0.8rem; align-items:center;">
+          <button class="btn" id="btnSave">Save</button>
+          <button class="btn secondary" id="btnCancel">Abbrechen</button>
+          <span id="saveStatus" style="font-size:0.9rem;opacity:0.8;"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p>
+  </footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script>
+    // ===== Library – Schreiben mit Library-Login ODER Admin-Login =====
+    const LIB_KEY     = "portal_bibliothek_auth";
+    const ADMIN_KEY   = "portal_admin_auth";
+    const COLLECTION  = "bibliothek";
+
+    let unlocked = false;
+    let editingId = null;
+    let topicsCache = [];
+
+    const topicList   = document.getElementById("topicList");
+    const emptyState  = document.getElementById("emptyState");
+    const listView    = document.getElementById("listView");
+    const viewTopic   = document.getElementById("viewTopic");
+    const editorArea  = document.getElementById("editorArea");
+    const statusEl    = document.getElementById("status");
+    const btnNewTopic = document.getElementById("btnNewTopic");
+    const saveStatus  = document.getElementById("saveStatus"); const librarySearch=document.getElementById("librarySearch"); const libraryCategory=document.getElementById("libraryCategory");
+
+    function setStatus(text, isError = false) {
+      if (statusEl) {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? "#e74c3c" : "";
+      }
+    }
+
+    function setSaveStatus(text, isError = false) {
+      if (saveStatus) {
+        saveStatus.textContent = text;
+        saveStatus.style.color = isError ? "#e74c3c" : "#2ecc71";
+      }
+    }
+
+    async function loadTopics() {
+      try {
+        setStatus("Lade Einträge…");
+        const topics = await Vulpes OculusStorage.load(COLLECTION);
+        topicsCache = Array.isArray(topics) ? topics : [];
+        setStatus("");
+        return topicsCache;
+      } catch (e) {
+        console.error(e);
+        setStatus("Fehler beim Laden", true);
+        return topicsCache;
+      }
+    }
+
+    async function saveTopics(topics) {
+      try {
+        setSaveStatus("Speichere…");
+        await Vulpes OculusStorage.save(COLLECTION, topics);
+        topicsCache = topics;
+        setSaveStatus("Gespeichert");
+        setTimeout(() => setSaveStatus(""), 2000);
+      } catch (e) {
+        console.error(e);
+        setSaveStatus("Fehler beim Save", true);
+        throw e;
+      }
+    }
+
+    function renderList() {
+      const query=(librarySearch?.value||"").trim().toLowerCase(); const cat=libraryCategory?.value||""; const topics=[...topicsCache].filter(t=>(!cat||(t.category||"Sonstiges")===cat)&&(!query||String(t.title||"").toLowerCase().includes(query)||String(t.content||"").toLowerCase().includes(query))).sort((a,b)=>b.updated-a.updated);
+      topicList.innerHTML = "";
+
+      if (topics.length === 0) {
+        emptyState.style.display = "block";
+        return;
+      }
+      emptyState.style.display = "none";
+
+      topics.forEach(t => {
+        const li = document.createElement("article"); li.className="library-card";
+        const date = new Date(t.updated).toLocaleString("de-DE");
+        li.innerHTML = `
+          <a href="#" data-id="${t.id}">
+            <span class="library-tag">${escapeHtml(t.category||"Sonstiges")}</span><h3>${escapeHtml(t.title)}</h3><p>${escapeHtml((t.content||"").slice(0,150))}${(t.content||"").length>150?"…":""}</p><div class="topic-meta">Zuletzt geändert: ${date}</div>
+          </a>
+          ${unlocked ? `<div class="tile-actions" style="margin-top:.6rem;">
+            <button class="btn secondary" data-edit-list="${t.id}">Edit</button>
+            <button class="btn danger" data-del-list="${t.id}">Delete</button>
+          </div>` : ""}`;
+        li.querySelector("a").addEventListener("click", e => {
+          e.preventDefault();
+          showTopic(t.id);
+        });
+        const eb = li.querySelector("[data-edit-list]");
+        if (eb) eb.onclick = () => openEditor(t);
+        const db = li.querySelector("[data-del-list]");
+        if (db) db.onclick = async () => {
+          if (!confirm("Eintrag wirklich löschen?")) return;
+          try {
+            await saveTopics(topicsCache.filter(x => x.id !== t.id));
+            showList();
+          } catch (e) {
+            alert("Delete fehlgeschlagen. Bitte erneut versuchen.");
+          }
+        };
+        topicList.appendChild(li);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatLore(text) {
+      if (!text) return "";
+      const normalized = String(text).replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\\\\n/g, "\n");
+      const lines = normalized.split("\n"), parts = []; let listItems = [];
+      const flushList = () => { if (!listItems.length) return; parts.push("<ul class=\"lore-list\">"+listItems.map(item=>"<li>"+escapeHtml(item)+"</li>").join("")+"</ul>"); listItems=[]; };
+      lines.forEach(line => {
+        const trimmed=line.trim(); if(!trimmed){flushList();return;}
+        const bullet=trimmed.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/); if(bullet){listItems.push(bullet[1]);return;}
+        flushList();
+        const heading=trimmed.match(/^-+\s*(.+?)\s*-+$/); if(heading){parts.push("<h4 class=\"lore-heading\">"+escapeHtml(heading[1])+"</h4>");return;}
+        const markdownHeading=trimmed.match(/^#{1,4}\s+(.+)$/); if(markdownHeading){parts.push("<h4 class=\"lore-heading\">"+escapeHtml(markdownHeading[1])+"</h4>");return;}
+        parts.push("<p class=\"lore-paragraph\">"+escapeHtml(trimmed)+"</p>");
+      }); flushList(); return parts.join("");
+    }
+
+    function showTopic(id) {
+      const t = topicsCache.find(x => x.id === id);
+      if (!t) return;
+
+      document.getElementById("viewTitle").textContent = t.title;
+      document.getElementById("viewMeta").textContent =
+        "Zuletzt geändert: " + new Date(t.updated).toLocaleString("de-DE");
+      const vc = document.getElementById("viewContent");
+      vc.innerHTML = formatLore(t.content || "");
+
+      const actions = document.getElementById("viewActions");
+      actions.style.display = unlocked ? "flex" : "none";
+
+      listView.style.display = "none";
+      editorArea.classList.remove("visible");
+      viewTopic.style.display = "block";
+
+      document.getElementById("btnEdit").onclick = () => openEditor(t);
+      document.getElementById("btnDelete").onclick = async () => {
+        if (confirm("Eintrag wirklich löschen?")) {
+          try {
+            await saveTopics(topicsCache.filter(x => x.id !== id));
+            showList();
+          } catch (e) {
+            alert("Delete fehlgeschlagen. Bitte erneut versuchen.");
+          }
+        }
+      };
+    }
+
+    function showList() {
+      viewTopic.style.display = "none";
+      editorArea.classList.remove("visible");
+      listView.style.display = "block";
+      renderList();
+    }
+
+    function openEditor(topic = null) {
+      editingId = topic ? topic.id : null;
+      document.getElementById("editorTitle").textContent =
+        topic ? "Eintrag bearbeiten" : "Neuer Eintrag";
+      document.getElementById("inputTitle").value = topic ? topic.title : ""; document.getElementById("inputCategory").value = topic ? (topic.category||"Sonstiges") : "Geschichte";
+      document.getElementById("inputContent").value = topic ? topic.content : "";
+      setSaveStatus("");
+
+      listView.style.display = "none";
+      viewTopic.style.display = "none";
+      editorArea.classList.add("visible");
+      document.getElementById("inputTitle").focus();
+    }
+
+    async function saveTopic() {
+      const title = document.getElementById("inputTitle").value.trim();
+      const content = document.getElementById("inputContent").value.trim(); const category = document.getElementById("inputCategory").value;
+
+      if (!title) {
+        alert("Bitte einen Titel eingeben.");
+        return;
+      }
+
+      const topics = [...topicsCache];
+      const now = Date.now();
+
+      if (editingId) {
+        const t = topics.find(x => x.id === editingId);
+        if (t) {
+          t.title = title;
+          t.content = content;
+          t.category = category;
+          t.updated = now;
+        }
+      } else {
+        topics.push({
+          id: "b_" + now + "_" + Math.random().toString(36).slice(2, 7),
+          title,
+          content,
+          category,
+          created: now,
+          updated: now
+        });
+      }
+
+      try {
+        await saveTopics(topics);
+        showList();
+      } catch (e) {
+        alert("Save fehlgeschlagen. Bitte erneut versuchen.");
+      }
+    }
+
+    function canWrite() {
+      try {
+        return sessionStorage.getItem(LIB_KEY) === "1" || sessionStorage.getItem(ADMIN_KEY) === "1";
+      } catch { return false; }
+    }
+
+    function setUnlocked(state) {
+      unlocked = state;
+      if (btnNewTopic) btnNewTopic.style.display = state ? "inline-block" : "none";
+    }
+
+    if (btnNewTopic) btnNewTopic.addEventListener("click", () => openEditor());
+    document.getElementById("btnSave")?.addEventListener("click", saveTopic);
+    document.getElementById("btnCancel")?.addEventListener("click", showList);
+    document.getElementById("btnBack")?.addEventListener("click", showList); librarySearch?.addEventListener("input",renderList); libraryCategory?.addEventListener("change",renderList);
+
+    setUnlocked(canWrite());
+    loadTopics().then(() => {
+      renderList();
+      if (canWrite()) {
+        setStatus("Schreibmodus: freigeschaltet");
+      } else {
+        setStatus("Schreibmodus: gesperrt (Login auf Home)");
+      }
+    });
+  </script>
+  <script src="legal-notice.js"></script>
+</body>
+</html>

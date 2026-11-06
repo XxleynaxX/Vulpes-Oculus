@@ -1,0 +1,377 @@
+/**
+ * Vulpes Oculus – Wetter-Kern (Browser)
+ *
+ * Die Grundkonfiguration kommt aus weather-config.js.
+ * Keine Datenbank und kein GITHUB_TOKEN nötig.
+ *
+ * Die Webseite und der Render-Proxy verwenden dieselbe weather-config.js.
+ * Admin-Änderungen werden lokal im Browser zwischengespeichert.
+ * Für dauerhafte Änderungen der gemeinsamen Config muss weather-config.js
+ * selbst geändert und neu deployed werden.
+ */
+(function () {
+  "use strict";
+
+  var PROXY = "https://vulpesoculus-1.onrender.com";
+  var CACHE_KEY = "vulpesoculus_weather_local_v1";
+  var DEFAULT_TITLE = "🌦️ Wetter in Vulpes Oculus";
+  var DEFAULT_TEXT = "%wetter_icon% %wetter% ist jetzt bei Vulpes Oculus.\n\n%wetter_beschreibung%\n\nNächster Wechsel: %naechster_wetterwechsel%";
+
+  function proxyBase() {
+    try {
+      var saved = localStorage.getItem("vulpesoculus_discord_proxy_url");
+      if (saved && saved.trim()) return saved.trim().replace(/\/$/, "");
+    } catch (e) {}
+    return PROXY;
+  }
+
+  function cleanWeather(w) {
+    w = w || {};
+    return {
+      name: String(w.name || "").trim() || "Unbenannt",
+      icon: String(w.icon || "").trim() || "🌤️",
+      description: String(w.description || "").trim(),
+      weight: Math.max(0, Number(w.weight) || 0)
+    };
+  }
+
+  function fileConfig() {
+    var raw = (typeof globalThis !== "undefined" && globalThis.VULPES OCULUS_WEATHER_CONFIG) || null;
+    var list = raw && Array.isArray(raw.weather) && raw.weather.length
+      ? raw.weather
+      : [{ name: "Klarer Himmel", icon: "☀️", description: "", weight: 1 }];
+
+    return {
+      intervalMinutes: Math.max(1, Number(raw && raw.intervalHours) || 6) * 60,
+      weather: list.map(cleanWeather)
+    };
+  }
+
+  function normalize(raw) {
+    var base = fileConfig();
+    raw = raw && typeof raw === "object" ? raw : {};
+
+    return {
+      intervalMinutes: Math.max(1, Math.round(Number(raw.intervalMinutes) || base.intervalMinutes)),
+      weather: Array.isArray(raw.weather) && raw.weather.length ? raw.weather.map(cleanWeather) : base.weather,
+      anchor: Number(raw.anchor) || 0,
+      seed: Math.max(0, Math.floor(Number(raw.seed) || 0)),
+      forced: raw.forced && raw.forced.name ? cleanWeather(raw.forced) : null,
+      forcedSlot: Math.max(0, Math.floor(Number(raw.forcedSlot) || 0)),
+      title: typeof raw.title === "string" && raw.title.trim() ? raw.title : DEFAULT_TITLE,
+      text: typeof raw.text === "string" && raw.text.trim() ? raw.text : DEFAULT_TEXT,
+      updatedAt: Number(raw.updatedAt) || 0
+    };
+  }
+
+  function randomIndex(seed, length) {
+    if (!length || length < 1) return 0;
+    var x = (seed * 1103515245 + 12345) >>> 0;
+    x = ((x ^ (x >>> 16)) * 2246822519) >>> 0;
+    return x % length;
+  }
+
+  function pickWeighted(seed, list) {
+    var total = 0;
+    for (var i = 0; i < list.length; i++) total += list[i].weight;
+    if (total <= 0) return list[randomIndex(seed, list.length)] || list[0];
+
+    var r = randomIndex(seed, total);
+    for (var j = 0; j < list.length; j++) {
+      r -= list[j].weight;
+      if (r < 0) return list[j];
+    }
+    return list[list.length - 1];
+  }
+
+  function compute(st, now) {
+    now = now == null ? Date.now() : now;
+    var ms = st.intervalMinutes * 60000;
+    var k = Math.max(0, Math.floor((now - st.anchor) / ms));
+    var forced = !!(st.forced && k === st.forcedSlot);
+    var w = forced ? st.forced : pickWeighted(st.seed + k, st.weather);
+
+    return {
+      key: st.anchor + ":" + k,
+      slot: k,
+      name: w.name,
+      icon: w.icon,
+      description: w.description,
+      weight: w.weight,
+      forced: forced,
+      intervalMinutes: st.intervalMinutes,
+      intervalHours: st.intervalMinutes / 60,
+      changedAt: new Date(st.anchor + k * ms).toISOString(),
+      nextAt: st.anchor + (k + 1) * ms
+    };
+  }
+
+  var shared = (function () {
+    try {
+      var c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (c) return normalize(c);
+    } catch (e) {}
+    return normalize(null);
+  })();
+
+  var lastKey = null;
+
+  function emit() {
+    var cur = compute(shared);
+    try {
+      window.dispatchEvent(new CustomEvent("vulpesoculus-weather-changed", { detail: cur }));
+    } catch (e) {}
+    return cur;
+  }
+
+  function apply(raw) {
+    var next = normalize(raw);
+    var changed = JSON.stringify(next) !== JSON.stringify(shared);
+    shared = next;
+
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(shared));
+    } catch (e) {}
+
+    if (changed) {
+      lastKey = compute(shared).key;
+      emit();
+    }
+  }
+
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (_, rej) {
+        setTimeout(function () { rej(new Error("Zeitüberschreitung")); }, ms);
+      })
+    ]);
+  }
+
+  async function refresh() {
+    try {
+      var r = await withTimeout(fetch(proxyBase() + "/weather/state", { cache: "no-store" }), 6000);
+      var d = await r.json();
+
+      if (r.ok && d && d.ok && d.state) {
+        var local;
+        try { local = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) { local = null; }
+
+        if (!local) apply(d.state);
+        return "config";
+      }
+    } catch (e) {}
+
+    return "cache";
+  }
+
+  function randomSeed() {
+    return Math.floor(Math.random() * 1000000);
+  }
+
+  function pickRandom(list, excludeName) {
+    var pool = list.filter(function (w) { return w.name !== excludeName; });
+    if (!pool.length) pool = list.slice();
+
+    var total = pool.reduce(function (s, w) { return s + w.weight; }, 0);
+    if (total <= 0) return pool[Math.floor(Math.random() * pool.length)];
+
+    var r = Math.random() * total;
+    for (var i = 0; i < pool.length; i++) {
+      r -= pool[i].weight;
+      if (r < 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }
+
+  function plain(w) {
+    return {
+      name: w.name,
+      icon: w.icon,
+      description: w.description,
+      weight: w.weight
+    };
+  }
+
+  async function update(mutator) {
+    var latest = normalize(shared);
+    var now = Date.now();
+    var next = mutator(latest, compute(latest, now), now) || latest;
+
+    next.updatedAt = now;
+    apply({
+      intervalMinutes: next.intervalMinutes,
+      weather: next.weather.map(plain),
+      anchor: next.anchor,
+      seed: next.seed,
+      forced: next.forced ? plain(next.forced) : null,
+      forcedSlot: next.forcedSlot,
+      title: next.title,
+      text: next.text,
+      updatedAt: next.updatedAt
+    });
+
+    return {
+      state: compute(shared),
+      proxy: false,
+      localOnly: true
+    };
+  }
+
+  async function setWeatherOnRender(w) {
+    var token = "";
+    try { token = sessionStorage.getItem("vulpesoculus_discord_token") || ""; } catch (e) {}
+    if (!token) throw new Error("Admin-Anmeldung fehlt. Bitte erneut mit Discord anmelden.");
+
+    var me = await withTimeout(fetch(proxyBase() + "/auth/me", {
+      method: "GET",
+      cache: "no-store",
+      headers: { "Authorization": "Bearer " + token }
+    }), 6000);
+    var mi = await me.json().catch(function () { return {}; });
+    if (!me.ok || !mi.ok || !mi.admin) {
+      throw new Error("Discord-Admin-Anmeldung ungültig. Bitte erneut anmelden.");
+    }
+
+    var r = await withTimeout(fetch(proxyBase() + "/weather/set", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ weather: plain(cleanWeather(w)) })
+    }), 10000);
+    var d = await r.json().catch(function () { return {}; });
+    if (!r.ok || !d.ok || !d.current) throw new Error(d.error || ("Status " + r.status));
+    return d.current;
+  }
+
+  function restartWith(w) {
+    return function (st, cur, now) {
+      st.anchor = now;
+      st.seed = randomSeed();
+      st.forced = w ? cleanWeather(w) : null;
+      st.forcedSlot = 0;
+      return st;
+    };
+  }
+
+  var api = {
+    get: function () { return compute(shared); },
+    msNext: function () { return Math.max(0, compute(shared).nextAt - Date.now()); },
+    nextChangeTime: function () { return new Date(compute(shared).nextAt); },
+
+    format: function (ms) {
+      var t = Math.max(0, Math.floor(Number(ms) / 1000));
+      var d = Math.floor(t / 86400);
+      var h = Math.floor((t % 86400) / 3600);
+      var m = Math.floor((t % 3600) / 60);
+      var s = t % 60;
+      var hms = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+      return d ? d + "T " + hms : hms;
+    },
+
+    formatInterval: function (min) {
+      min = Number(min) || 0;
+      if (min % 1440 === 0) return (min / 1440) + (min === 1440 ? " Tag" : " Tage");
+      if (min % 60 === 0) return (min / 60) + (min === 60 ? " Stunde" : " Stunden");
+      return min + (min === 1 ? " Minute" : " Minuten");
+    },
+
+    getShared: function () {
+      return JSON.parse(JSON.stringify(shared));
+    },
+
+    getWeatherList: function () {
+      return shared.weather.slice();
+    },
+
+    loadConfig: function () {
+      return {
+        intervalHours: shared.intervalMinutes / 60,
+        intervalMinutes: shared.intervalMinutes,
+        weather: shared.weather.slice()
+      };
+    },
+
+    refresh: refresh,
+
+    chooseWeather: async function (w) {
+      var current = await setWeatherOnRender(w);
+      apply({
+        intervalMinutes: shared.intervalMinutes,
+        weather: shared.weather.map(plain),
+        anchor: current.changedAt ? new Date(current.changedAt).getTime() : Date.now(),
+        seed: shared.seed,
+        forced: plain(w),
+        forcedSlot: 0,
+        title: shared.title,
+        text: shared.text,
+        updatedAt: Date.now()
+      });
+      return { state: compute(shared), proxy: true, localOnly: false };
+    },
+
+    skipWeather: function () {
+      return update(function (st, cur, now) {
+        return restartWith(pickRandom(st.weather, cur.name))(st, cur, now);
+      });
+    },
+
+    resetTimer: function () {
+      return update(restartWith(null));
+    },
+
+    setIntervalMinutes: function (min) {
+      min = Math.max(1, Math.round(Number(min) || 0));
+      return update(function (st, cur, now) {
+        st.intervalMinutes = min;
+        return restartWith(null)(st, cur, now);
+      });
+    },
+
+    saveWeatherList: function (list) {
+      list = (list || []).map(cleanWeather).filter(function (w) { return w.name; });
+      if (!list.length) return Promise.reject(new Error("Mindestens eine Wetterlage nötig"));
+
+      return update(function (st, cur) {
+        st.forced = cleanWeather(cur);
+        st.forcedSlot = cur.slot;
+        st.weather = list;
+        return st;
+      });
+    },
+
+    saveTemplate: function (title, text) {
+      return update(function (st) {
+        st.title = String(title || "").trim() || DEFAULT_TITLE;
+        st.text = String(text || "").trim() || DEFAULT_TEXT;
+        return st;
+      });
+    },
+
+    DEFAULT_TITLE: DEFAULT_TITLE,
+    DEFAULT_TEXT: DEFAULT_TEXT,
+    _compute: compute,
+    _normalize: normalize
+  };
+
+  setInterval(function () {
+    var cur = compute(shared);
+    if (lastKey === null) {
+      lastKey = cur.key;
+      return;
+    }
+
+    if (cur.key !== lastKey) {
+      lastKey = cur.key;
+      emit();
+    }
+  }, 1000);
+
+  setInterval(refresh, 60 * 1000);
+  refresh();
+
+  window.Vulpes OculusWeather = api;
+})();

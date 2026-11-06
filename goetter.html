@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gods & Kulte – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vulpesoculus-admin.css">
+  <style>
+    .wrap { max-width: 1100px; margin: auto; padding: 2rem 1.5rem; }
+    .god-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+    .god-card {
+      cursor: pointer;
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.3rem;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .god-card:hover { border-color: var(--accent-soft); background: var(--bg-hover); box-shadow: 0 0 20px rgba(168, 85, 247, 0.22); }
+    .god-card h3 { margin: 0 0 0.3rem; color: var(--accent-soft); font-size: 1.25rem; }
+    .god-card .domain { font-size: 0.85rem; color: var(--accent); margin-bottom: 0.6rem; font-weight: 600; }
+    .god-card .click-hint {
+      font-size: 0.75rem;
+      color: var(--purple);
+      margin-top: 0.6rem;
+    }
+    .god-card.expanded {
+      grid-column: 1 / -1;
+      border-color: var(--purple);
+      box-shadow: 0 0 24px rgba(124, 58, 237, 0.3);
+    }
+    .god-card .full-text {
+      display: none;
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.7;
+      margin-top: 0.8rem;
+    }
+
+    .god-card.expanded .full-text {
+      display: block;
+    }
+
+    .lore-help {
+      margin: 0 0 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(124, 58, 237, 0.08);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 0.9rem;
+    }
+
+    .lore-help strong {
+      color: var(--accent-soft);
+    }
+
+    .lore-help code {
+      padding: 0.12rem 0.35rem;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--accent-soft);
+    }
+
+    .god-card .lore-heading {
+      color: var(--accent-soft);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 1.2rem 0 0.45rem;
+    }
+
+    .god-card .lore-heading:first-child {
+      margin-top: 0;
+    }
+
+    .god-card .lore-paragraph {
+      margin: 0 0 0.9rem;
+    }
+
+    .god-card .lore-list {
+      margin: 0.35rem 0 1rem 1.4rem;
+      padding: 0;
+    }
+
+    .god-card .lore-list li {
+      margin-bottom: 0.35rem;
+    }
+    .god-card.expanded .full-text { display: block; }
+    .god-card.expanded .click-hint { display: none; }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <header>
+    <div class="logo-wrap"><div class="logo">Vulpes Oculus</div></div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html" class="active">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Gods & Kulte</h1>
+    <p class="page-desc">Die Mächte und Gods der Welt. Neue Einträge erscheinen automatisch im Character Sheet.</p>
+
+    <section class="admin-panel" id="adminPanel" style="display:none;">
+      <div class="admin-form">
+        <h2 id="formTitle" data-testid="goetter-form-title">Neuen Gott anlegen</h2>
+        <div class="lore-help">
+          <strong>So kannst du die Lore schreiben:</strong><br>
+          Leerzeilen erzeugen neue Absätze. Überschriften kannst du einfach mit
+          <code>- Überschrift -</code> oder <code>## Überschrift</code> schreiben.
+          Aufzählungen funktionieren mit <code>- Punkt</code>, <code>• Punkt</code>,
+          <code>* Punkt</code> oder <code>1. Punkt</code>. Du musst kein HTML schreiben.
+          <br><br>
+          <strong>Beispiel:</strong><br>
+          <code>- Die Macht des Blutgedächtnisses -</code><br>
+          Eine kurze Beschreibung der Fähigkeit und ihrer Bedeutung.<br><br>
+          <code>- Fähigkeiten -</code><br>
+          <code>- Erinnerungen wahrnehmen</code><br>
+          <code>- Gefühle im Blut erkennen</code>
+        </div>
+        <div class="admin-grid">
+          <div class="admin-field"><label>Name *</label><input id="fName" data-testid="goetter-input-name" placeholder="z. B. Aurelion"></div>
+          <div class="admin-field"><label>Domäne</label><input id="fDomain" data-testid="goetter-input-domain" placeholder="Licht • Ordnung • Sonne"></div>
+          <div class="admin-field full"><label>Kompletter Text</label><textarea id="fFull" data-testid="goetter-input-full" rows="10" placeholder="Hier kommt der komplette Text des Gottes hinein."></textarea></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn" id="btnSave" data-testid="goetter-save-btn">Save</button>
+          <button class="btn secondary" id="btnCancel" data-testid="goetter-cancel-btn" style="display:none;">Abbrechen</button>
+          <span class="admin-status" id="status"></span>
+        </div>
+      </div>
+      <h2 class="admin-sub-title">Vorhandene Gods</h2>
+    </section>
+
+    <div class="god-grid" id="tiles"></div>
+  </main>
+
+  <footer><p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p></footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script src="vulpesoculus-data.js"></script>
+  <script>
+    const KEY = "goetter";
+    const esc = Vulpes OculusData.esc;
+    let editIndex = null;
+    const el = id => document.getElementById(id);
+    function admin() { return Vulpes OculusData.isAdmin(); }
+
+    function formatLore(text) {
+      if (!text) return "";
+
+      // Echte Zeilenumbrüche und eingefügte \\n werden vereinheitlicht.
+      const normalized = String(text)
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\\r/g, "\n")
+        .replace(/\\\\\n/g, "\n");
+
+      const lines = normalized.split("\n");
+      const parts = [];
+      let listItems = [];
+
+      const flushList = () => {
+        if (!listItems.length) return;
+        parts.push("<ul class=\"lore-list\">" + listItems.map(item => "<li>" + esc(item) + "</li>").join("") + "</ul>");
+        listItems = [];
+      };
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          flushList();
+          return;
+        }
+
+        // Markdown-ähnliche Aufzählungen: -, *, • oder 1.
+        const bullet = trimmed.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
+        if (bullet) {
+          listItems.push(bullet[1]);
+          return;
+        }
+
+        flushList();
+
+        // Zeilen wie "- Die Macht des Blutgedächtnisses -" werden als Überschrift erkannt.
+        const heading = trimmed.match(/^-+\s*(.+?)\s*-+$/);
+        if (heading) {
+          parts.push("<h4 class=\"lore-heading\">" + esc(heading[1]) + "</h4>");
+          return;
+        }
+
+        // Markdown-Überschriften wie ## Blutgedächtnis
+        const markdownHeading = trimmed.match(/^#{1,4}\s+(.+)$/);
+        if (markdownHeading) {
+          parts.push("<h4 class=\"lore-heading\">" + esc(markdownHeading[1]) + "</h4>");
+          return;
+        }
+
+        parts.push("<p class=\"lore-paragraph\">" + esc(trimmed) + "</p>");
+      });
+
+      flushList();
+      return parts.join("");
+    }
+
+    function render() {
+      const list = Vulpes OculusData.load(KEY);
+      el("adminPanel").style.display = admin() ? "block" : "none";
+      el("tiles").innerHTML = list.map((g, i) => `
+        <article class="god-card">
+          <h3>${esc(g.name)}</h3>
+          <div class="domain">${esc(g.domain || "")}</div>
+          <div class="full-text">${formatLore(g.full || g.short || "")}</div>
+          <div class="click-hint">Klicken zum Aufklappen →</div>
+          ${admin() ? `<div class="tile-actions">
+            <button class="btn secondary" data-edit="${i}" data-testid="goetter-edit-${i}">Edit</button>
+            <button class="btn danger" data-del="${i}" data-testid="goetter-delete-${i}">Delete</button>
+          </div>` : ""}
+        </article>`).join("");
+      el("tiles").querySelectorAll("[data-edit]").forEach(b => b.onclick = e => { e.stopPropagation(); startEdit(+b.dataset.edit); });
+      el("tiles").querySelectorAll("[data-del]").forEach(b => b.onclick = e => { e.stopPropagation(); remove(+b.dataset.del); });
+      el("tiles").querySelectorAll(".god-card").forEach(card => {
+        card.onclick = e => {
+          if (e.target.closest("button")) return;
+          card.classList.toggle("expanded");
+        };
+      });
+    }
+
+    function resetForm() {
+      editIndex = null;
+      el("fName").value = ""; el("fDomain").value = ""; el("fFull").value = "";
+      el("formTitle").textContent = "Neuen Gott anlegen";
+      el("btnSave").textContent = "Save";
+      el("btnCancel").style.display = "none";
+      el("status").textContent = "";
+    }
+
+    function startEdit(i) {
+      const g = Vulpes OculusData.load(KEY)[i];
+      if (!g) return;
+      editIndex = i;
+      el("fName").value = g.name || ""; el("fDomain").value = g.domain || ""; el("fFull").value = g.full || g.short || "";
+      el("formTitle").textContent = "Gott bearbeiten";
+      el("btnSave").textContent = "Änderungen speichern";
+      el("btnCancel").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function remove(i) {
+      if (!confirm("Diesen Gott wirklich löschen?")) return;
+      const list = Vulpes OculusData.load(KEY);
+      list.splice(i, 1);
+      Vulpes OculusData.save(KEY, list);
+      if (editIndex === i) resetForm();
+      render();
+    }
+
+    async function save() {
+      const name = el("fName").value.trim();
+      if (!name) {
+        el("status").style.color = "#f87171";
+        el("status").textContent = "Bitte einen Namen eingeben.";
+        return;
+      }
+
+      const list = Vulpes OculusData.load(KEY);
+      const full = el("fFull").value.trim();
+      const entry = { name, domain: el("fDomain").value.trim(), full };
+      if (editIndex !== null && list[editIndex]) list[editIndex] = entry;
+      else list.push(entry);
+
+      el("btnSave").disabled = true;
+      el("status").style.color = "";
+      el("status").textContent = "Speichere in der Datenbank …";
+
+      try {
+        await Vulpes OculusData.save(KEY, list);
+        resetForm();
+        el("status").style.color = "#22c55e";
+        el("status").textContent = "✓ In der Datenbank gespeichert";
+        render();
+        setTimeout(() => { el("status").textContent = ""; }, 2500);
+      } catch (err) {
+        console.error("[Gods] Save fehlgeschlagen:", err);
+        el("status").style.color = "#f87171";
+        el("status").textContent = "✗ Save in der Datenbank fehlgeschlagen";
+      } finally {
+        el("btnSave").disabled = false;
+      }
+    }
+
+    el("btnSave").onclick = save;
+    el("btnCancel").onclick = resetForm;
+    render();
+    window.addEventListener("storage", render);
+    document.addEventListener("vulpesoculus-data-synced", render);
+  </script>
+<script src="legal-notice.js"></script>
+</body>
+</html>

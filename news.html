@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-overlay"></div>
+    <header>
+    <div class="logo-wrap">
+      <div class="logo">Vulpes Oculus</div>
+    </div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html" class="active">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">News</h1>
+    <p class="page-desc">Aktuelle Meldungen aus dem Event-Bereich und dem Portal.</p>
+
+    <div id="newsList"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      Noch keine News.<br>
+      Events, die als „In News anzeigen“ markiert sind, erscheinen hier automatisch.
+      <br><br>
+      <a href="events.html" class="btn" style="display:inline-block;text-decoration:none;">Zu den Events →</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p>
+  </footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script src="vulpesoculus-sync.js"></script>
+  <script>
+    const EVENTS_KEY = "portal_events";
+    function isAdminNews() { try { return sessionStorage.getItem("portal_admin_auth") === "1"; } catch { return false; } }
+
+    function loadEvents() {
+      try { return JSON.parse(localStorage.getItem(EVENTS_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function render() {
+      const events = loadEvents()
+        .filter(e => e.showInNews)
+        .sort((a, b) => b.updated - a.updated);
+
+      const list = document.getElementById("newsList");
+      const empty = document.getElementById("emptyState");
+      list.innerHTML = "";
+
+      if (events.length === 0) {
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+
+      events.forEach(e => {
+        const card = document.createElement("div");
+        card.className = "card";
+        const dateLine = e.date
+          ? `<div class="topic-meta" style="margin-bottom:0.6rem;">📅 ${escapeHtml(e.date)}</div>`
+          : `<div class="topic-meta" style="margin-bottom:0.6rem;">Aktualisiert: ${new Date(e.updated).toLocaleString("de-DE")}</div>`;
+        card.innerHTML = `
+          <h3 style="margin-bottom:0.3rem;">${escapeHtml(e.title)}</h3>
+          ${dateLine}
+          <div class="topic-content" style="white-space:pre-wrap;">${escapeHtml(e.content)}</div>
+          <p style="margin-top:1rem;">
+            <a href="events.html" style="color:var(--purple-bright);font-size:0.9rem;">→ Zum Event-Bereich</a>
+          </p>`;
+        if (isAdminNews()) {
+          const bar = document.createElement("div");
+          bar.style.cssText = "display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;";
+          bar.innerHTML = '<a class="btn secondary" style="text-decoration:none;" href="events.html#edit=' + encodeURIComponent(e.id) + '">✏️ Edit</a><button type="button" class="btn danger">🗑️ Delete</button>';
+          bar.querySelector("button").addEventListener("click", async () => {
+            if (!confirm("Diese News / dieses Event wirklich löschen?")) return;
+            try { await Vulpes OculusSync.removeEvent(e.id); } catch (err) { alert("Delete fehlgeschlagen: " + err.message); }
+          });
+          card.appendChild(bar);
+        }
+        list.appendChild(card);
+      });
+    }
+
+    render();
+    document.addEventListener("vulpesoculus-synced", render);
+  </script>
+<script src="legal-notice.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vulpes Oculus – Events</title><link rel="stylesheet" href="style.css"><style>
+.wrap{max-width:1100px;margin:auto;padding:2rem 1.2rem 4rem}.hero{text-align:center;margin-bottom:2rem}.hero h1{color:var(--purple-bright)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}.cardx{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.1rem}.cardx h3{color:var(--purple-bright);margin:.2rem 0 .5rem}.meta{color:var(--text-muted);font-size:.9rem}.form{margin:1.5rem 0;padding:1.3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:14px}.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.field{margin-bottom:.9rem}.field label{display:block;color:var(--text-muted);margin-bottom:.3rem}.field input,.field textarea{width:100%;box-sizing:border-box;padding:.65rem;border-radius:7px;border:1px solid var(--border);background:var(--bg-input);color:var(--text)}.field textarea{min-height:90px}.actions{display:flex;gap:.5rem;flex-wrap:wrap}@media(max-width:700px){.row{grid-template-columns:1fr}}
+</style></head><body><div class="bg-overlay"></div><header><div class="logo-wrap"><div class="logo">Vulpes Oculus</div></div><nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html" class="active">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav></header><main class="wrap"><section class="hero"><h1>📅 Events & Geburtstage</h1><p class="meta">Zentrale Daten aus der Datenbank.</p></section>
+<section class="form" id="adminForm" style="display:none"><h2 id="formTitle">Neues Event</h2><div class="row"><div class="field"><label>Titel</label><input id="title"></div><div class="field"><label>Datum</label><input id="date" type="date"></div></div><div class="field"><label>Beschreibung</label><textarea id="description"></textarea></div><div class="actions"><button class="btn" id="save">Save</button><button class="btn secondary" id="cancel" style="display:none">Abbrechen</button><span id="status" class="meta"></span></div></section>
+<section><h2 class="page-title">Kommende Events</h2><div id="events" class="grid"></div></section></main><footer><p>© 2026 Kiyasha · Vulpes Oculus</p></footer>
+<script src="vulpesoculus-auth.js"></script>
+<script src="vulpesoculus-storage.js"></script>
+<script src="vulpesoculus-sync.js"></script><script>
+const isAdmin=()=>{try{return sessionStorage.getItem('portal_admin_auth')==='1'}catch{return false}};
+let list=[],editId=null;
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+async function load(){
+  // Bevorzugt Vulpes OculusSync (Events-Bin), Fallback auf Vulpes OculusStorage
+  try {
+    if (window.Vulpes OculusSync && Vulpes OculusSync.loadShared) {
+      const fromEvents = await Vulpes OculusSync.loadShared('events');
+      const fromCharEv = await Vulpes OculusStorage.load('characterEvents');
+      // Mergen, ohne Duplikate (nach id)
+      const byId = new Map();
+      (fromEvents||[]).forEach(e => { if (e && e.id) byId.set(String(e.id), e); });
+      (fromCharEv||[]).forEach(e => { if (e && e.id && !byId.has(String(e.id))) byId.set(String(e.id), e); });
+      list = Array.from(byId.values());
+    } else {
+      list = await Vulpes OculusStorage.load('characterEvents');
+    }
+  } catch (e) {
+    list = await Vulpes OculusStorage.load('characterEvents');
+  }
+  if (!Array.isArray(list)) list = [];
+  render();
+}
+
+function render(){
+  adminForm.style.display=isAdmin()?'block':'none';
+  const arr=list.filter(e=>e.eventType!=='Geburtstag').slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  events.innerHTML=arr.length?arr.map(e=>`<article class="cardx"><h3>${esc(e.title||e.characterName||'Event')}</h3><div class="meta">${esc(e.date||'')}</div><p>${esc(e.description||e.text||'')}</p>${isAdmin()?`<div class="actions"><button class="btn secondary" data-edit="${esc(e.id)}">Edit</button><button class="btn danger" data-del="${esc(e.id)}">Delete</button></div>`:''}</article>`).join(''):'<p class="meta">Keine Events vorhanden.</p>';
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>remove(b.dataset.del));
+}
+function reset(){editId=null;title.value='';date.value='';description.value='';formTitle.textContent='Neues Event';save.textContent='Save';cancel.style.display='none'}
+function startEdit(id){const e=list.find(x=>x.id===id);if(!e)return;editId=id;title.value=e.title||'';date.value=e.date||'';description.value=e.description||e.text||'';formTitle.textContent='Event bearbeiten';save.textContent='Änderungen speichern';cancel.style.display='inline-block'}
+
+save.onclick=async()=>{
+  if(!isAdmin())return;
+  const t=title.value.trim();
+  if(!t)return;
+  const now=new Date().toISOString();
+  let payload;
+  if(editId){
+    const i=list.findIndex(x=>x.id===editId);
+    if(i>=0){
+      list[i]={...list[i],title:t,date:date.value,description:description.value.trim(),updatedAt:now};
+      payload=list[i];
+    }
+  } else {
+    payload={id:'E-'+Date.now(),title:t,date:date.value,description:description.value.trim(),eventType:'Event',createdAt:now,updatedAt:now};
+    list.push(payload);
+  }
+  // In den Events-Bin schreiben
+  try {
+    if (window.Vulpes OculusSync && Vulpes OculusSync.saveEvent) {
+      await Vulpes OculusSync.saveEvent({
+        title: payload.title,
+        date: payload.date,
+        content: payload.description,
+        description: payload.description,
+        eventType: payload.eventType || 'Event',
+        showInNews: true
+      }, editId || null);
+    } else {
+      await Vulpes OculusStorage.save('characterEvents', list);
+    }
+  } catch (err) {
+    await Vulpes OculusStorage.save('characterEvents', list);
+  }
+  status.textContent='✓ In der Datenbank gespeichert';
+  reset();
+  await load();
+};
+cancel.onclick=reset;
+
+async function remove(id){
+  if(!isAdmin()||!confirm('Event wirklich löschen?'))return;
+  try {
+    if (window.Vulpes OculusSync && Vulpes OculusSync.removeEvent) {
+      await Vulpes OculusSync.removeEvent(id);
+    } else {
+      list=list.filter(x=>x.id!==id);
+      await Vulpes OculusStorage.save('characterEvents',list);
+    }
+  } catch (e) {
+    list=list.filter(x=>x.id!==id);
+    await Vulpes OculusStorage.save('characterEvents',list);
+  }
+  await load();
+}
+
+document.addEventListener('vulpesoculus-synced', () => load());
+load().catch(e=>events.innerHTML='<p class="meta">Fehler beim Laden: '+esc(e.message)+'</p>');
+</script></body></html>

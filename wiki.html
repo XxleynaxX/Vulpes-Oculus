@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+    <style>
+    .lore-help {
+      margin: 0 0 .8rem;
+      padding: .8rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(124, 58, 237, .08);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: .9rem;
+    }
+    .lore-help strong { color: var(--accent-soft); }
+    .lore-help code {
+      padding: .1rem .3rem;
+      border-radius: 5px;
+      background: rgba(0,0,0,.22);
+      color: var(--accent-soft);
+    }
+    .lore-heading { color: var(--accent-soft); font-size: 1.1rem; margin: 1.1rem 0 .4rem; }
+    .lore-heading:first-child { margin-top: 0; }
+    .lore-paragraph { margin: 0 0 .8rem; }
+    .lore-list { margin: .3rem 0 .9rem 1.4rem; padding: 0; }
+    .lore-list li { margin-bottom: .3rem; }
+    </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+    <header>
+    <div class="logo-wrap">
+      <div class="logo">Vulpes Oculus</div>
+    </div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html" class="active">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+</nav>
+  </header>
+
+  <main>
+    <h1 class="page-title">Wiki</h1>
+    <p class="page-desc">Sammle Wissen, erstelle eigene Themen und teile sie. Schreiben ist nur für Administratoren möglich.</p>
+
+    <div class="wiki-controls">
+      <button class="btn secondary" id="btnNewTopic" style="display:none;">+ Neues Thema</button>
+      <span id="status" style="margin-left:1rem;font-size:0.9rem;opacity:0.8;"></span>
+    </div>
+
+    <!-- Liste der Themen -->
+    <div id="listView">
+      <ul class="topic-list" id="topicList"></ul>
+      <div class="empty" id="emptyState" style="display:none;">
+        Noch keine Themen vorhanden.
+      </div>
+    </div>
+
+    <!-- Einzelnes Thema anzeigen -->
+    <div id="viewTopic" style="display:none;">
+      <div class="card">
+        <h2 id="viewTitle"></h2>
+        <div class="topic-meta" id="viewMeta"></div>
+        <div class="topic-content" id="viewContent"></div>
+        <div class="topic-actions" id="viewActions" style="display:none;">
+          <button class="btn" id="btnEdit">Edit</button>
+          <button class="btn danger" id="btnDelete">Delete</button>
+        </div>
+        <button class="btn secondary" id="btnBack" style="margin-top:1rem;">← Back zur Liste</button>
+      </div>
+    </div>
+
+    <!-- Editor (Neu / Edit) -->
+    <div class="editor-area" id="editorArea">
+      <div class="card">
+        <h3 id="editorTitle">Neues Thema</h3>
+        <div class="form-group">
+          <label for="inputTitle">Titel</label>
+          <input type="text" id="inputTitle" placeholder="Thema-Titel...">
+        </div>
+        <div class="form-group">
+          <label for="inputContent">Inhalt</label>
+        <div class="lore-help">
+          <strong>So schreibst du deinen Text:</strong><br>
+          Leerzeilen erzeugen neue Absätze. Überschriften kannst du mit
+          <code>- Überschrift -</code> oder <code>## Überschrift</code> schreiben.
+          Aufzählungen funktionieren mit <code>- Punkt</code>, <code>• Punkt</code>,
+          <code>* Punkt</code> oder <code>1. Punkt</code>. Du musst kein HTML schreiben.
+        </div>
+          <textarea id="inputContent" placeholder="Schreibe hier deinen Text..."></textarea>
+        </div>
+        <div style="display:flex; gap:0.8rem; align-items:center;">
+          <button class="btn" id="btnSave">Save</button>
+          <button class="btn secondary" id="btnCancel">Abbrechen</button>
+          <span id="saveStatus" style="font-size:0.9rem;opacity:0.8;"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p>
+  </footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script>
+    // ===== Konfiguration =====
+    const AUTH_KEY = "portal_admin_auth";   // gleicher Key wie Admin-Login
+    const COLLECTION = "wiki";
+
+    // ===== State =====
+    let unlocked = false;
+    let editingId = null;                  // null = neues Thema
+    let topicsCache = [];                   // lokale Kopie für schnelle UI
+
+    // ===== DOM =====
+    const topicList   = document.getElementById("topicList");
+    const emptyState  = document.getElementById("emptyState");
+    const listView    = document.getElementById("listView");
+    const viewTopic   = document.getElementById("viewTopic");
+    const editorArea  = document.getElementById("editorArea");
+    const statusEl    = document.getElementById("status");
+    const btnNewTopic = document.getElementById("btnNewTopic");
+    const saveStatus  = document.getElementById("saveStatus");
+
+    function setStatus(text, isError = false) {
+      if (statusEl) {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? "#e74c3c" : "";
+      }
+    }
+
+    function setSaveStatus(text, isError = false) {
+      if (saveStatus) {
+        saveStatus.textContent = text;
+        saveStatus.style.color = isError ? "#e74c3c" : "#2ecc71";
+      }
+    }
+
+    // ===== Storage über die Datenbank =====
+    async function loadTopics() {
+      try {
+        setStatus("Lade Themen…");
+        const topics = await Vulpes OculusStorage.load(COLLECTION);
+        topicsCache = Array.isArray(topics) ? topics : [];
+        setStatus("");
+        return topicsCache;
+      } catch (e) {
+        console.error(e);
+        setStatus("Fehler beim Laden", true);
+        return topicsCache;
+      }
+    }
+
+    async function saveTopics(topics) {
+      try {
+        setSaveStatus("Speichere…");
+        await Vulpes OculusStorage.save(COLLECTION, topics);
+        topicsCache = topics;
+        setSaveStatus("Gespeichert");
+        setTimeout(() => setSaveStatus(""), 2000);
+      } catch (e) {
+        console.error(e);
+        setSaveStatus("Fehler beim Save", true);
+        throw e;
+      }
+    }
+
+    // ===== Render Liste =====
+    function renderList() {
+      const topics = [...topicsCache].sort((a, b) => b.updated - a.updated);
+      topicList.innerHTML = "";
+
+      if (topics.length === 0) {
+        emptyState.style.display = "block";
+        return;
+      }
+      emptyState.style.display = "none";
+
+      topics.forEach(t => {
+        const li = document.createElement("li");
+        const date = new Date(t.updated).toLocaleString("de-DE");
+        li.innerHTML = `
+          <a href="#" data-id="${t.id}">
+            <strong>${escapeHtml(t.title)}</strong>
+            <div class="topic-meta">Zuletzt geändert: ${date}</div>
+          </a>`;
+        li.querySelector("a").addEventListener("click", e => {
+          e.preventDefault();
+          showTopic(t.id);
+        });
+        topicList.appendChild(li);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatLore(text) {
+      if (!text) return "";
+      const normalized = String(text)
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\\r/g, "\n")
+        .replace(/\\\\\n/g, "\n");
+      const lines = normalized.split("\n");
+      const parts = [];
+      let listItems = [];
+      const flushList = () => {
+        if (!listItems.length) return;
+        parts.push("<ul class=\"lore-list\">" + listItems.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ul>");
+        listItems = [];
+      };
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) { flushList(); return; }
+        const bullet = trimmed.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
+        if (bullet) { listItems.push(bullet[1]); return; }
+        flushList();
+        const heading = trimmed.match(/^-+\s*(.+?)\s*-+$/);
+        if (heading) { parts.push("<h4 class=\"lore-heading\">" + escapeHtml(heading[1]) + "</h4>"); return; }
+        const markdownHeading = trimmed.match(/^#{1,4}\s+(.+)$/);
+        if (markdownHeading) { parts.push("<h4 class=\"lore-heading\">" + escapeHtml(markdownHeading[1]) + "</h4>"); return; }
+        parts.push("<p class=\"lore-paragraph\">" + escapeHtml(trimmed) + "</p>");
+      });
+      flushList();
+      return parts.join("");
+    }
+
+    // ===== Thema anzeigen =====
+    function showTopic(id) {
+      const t = topicsCache.find(x => x.id === id);
+      if (!t) return;
+
+      document.getElementById("viewTitle").textContent = t.title;
+      document.getElementById("viewMeta").textContent =
+        "Zuletzt geändert: " + new Date(t.updated).toLocaleString("de-DE");
+      const vc = document.getElementById("viewContent");
+      vc.innerHTML = formatLore(t.content || "");
+
+      const actions = document.getElementById("viewActions");
+      actions.style.display = unlocked ? "flex" : "none";
+
+      listView.style.display = "none";
+      editorArea.classList.remove("visible");
+      viewTopic.style.display = "block";
+
+      // Edit / Delete Buttons
+      document.getElementById("btnEdit").onclick = () => openEditor(t);
+      document.getElementById("btnDelete").onclick = async () => {
+        if (confirm("Thema wirklich löschen?")) {
+          const filtered = topicsCache.filter(x => x.id !== id);
+          try {
+            await saveTopics(filtered);
+            showList();
+          } catch (e) {
+            alert("Delete fehlgeschlagen. Bitte erneut versuchen.");
+          }
+        }
+      };
+    }
+
+    function showList() {
+      viewTopic.style.display = "none";
+      editorArea.classList.remove("visible");
+      listView.style.display = "block";
+      renderList();
+    }
+
+    // ===== Editor =====
+    function openEditor(topic = null) {
+      editingId = topic ? topic.id : null;
+      document.getElementById("editorTitle").textContent =
+        topic ? "Thema bearbeiten" : "Neues Thema";
+      document.getElementById("inputTitle").value = topic ? topic.title : "";
+      document.getElementById("inputContent").value = topic ? topic.content : "";
+      setSaveStatus("");
+
+      listView.style.display = "none";
+      viewTopic.style.display = "none";
+      editorArea.classList.add("visible");
+      document.getElementById("inputTitle").focus();
+    }
+
+    async function saveTopic() {
+      const title = document.getElementById("inputTitle").value.trim();
+      const content = document.getElementById("inputContent").value.trim();
+
+      if (!title) {
+        alert("Bitte einen Titel eingeben.");
+        return;
+      }
+
+      const topics = [...topicsCache];
+      const now = Date.now();
+
+      if (editingId) {
+        const t = topics.find(x => x.id === editingId);
+        if (t) {
+          t.title = title;
+          t.content = content;
+          t.updated = now;
+        }
+      } else {
+        topics.push({
+          id: "t_" + now + "_" + Math.random().toString(36).slice(2, 7),
+          title,
+          content,
+          created: now,
+          updated: now
+        });
+      }
+
+      try {
+        await saveTopics(topics);
+        showList();
+      } catch (e) {
+        alert("Save fehlgeschlagen. Bitte erneut versuchen.");
+      }
+    }
+
+    // ===== Unlock (nur über Admin-Login) =====
+    function isAdmin() {
+      try { return sessionStorage.getItem(AUTH_KEY) === "1"; } catch { return false; }
+    }
+
+    function setUnlocked(state) {
+      unlocked = state;
+      if (statusEl && !statusEl.textContent.includes("Lade")) {
+        // Status nur setzen, wenn nicht gerade geladen wird
+      }
+      if (btnNewTopic) {
+        btnNewTopic.style.display = state ? "inline-block" : "none";
+      }
+    }
+
+    // ===== Events =====
+    btnNewTopic.addEventListener("click", () => openEditor());
+    document.getElementById("btnSave").addEventListener("click", saveTopic);
+    document.getElementById("btnCancel").addEventListener("click", showList);
+    document.getElementById("btnBack").addEventListener("click", showList);
+
+    // ===== Init =====
+    setUnlocked(isAdmin());
+    loadTopics().then(() => {
+      renderList();
+      if (isAdmin()) {
+        setStatus("Schreibmodus: freigeschaltet (Admin)");
+      } else {
+        setStatus("Schreibmodus: gesperrt");
+      }
+    });
+  </script>
+  <script src="legal-notice.js"></script>
+</body>
+</html>

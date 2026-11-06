@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professions & Handwerk – Vulpes Oculus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vulpesoculus-admin.css">
+  <style>
+    .wrap { max-width: 1100px; margin: auto; padding: 2rem 1.5rem; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; }
+    .tile { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.3rem; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .tile:hover { border-color: var(--accent-soft); background: var(--bg-hover); box-shadow: 0 0 20px rgba(168, 85, 247, 0.22); }
+    .tile h3 { margin: 0 0 0.4rem; color: var(--accent-soft); font-size: 1.2rem; }
+    .cat-badge { display: inline-block; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 999px; background: rgba(168, 85, 247, 0.15); color: var(--accent-soft); border: 1px solid rgba(168, 85, 247, 0.3); margin-bottom: 0.6rem; }
+    .muted { color: var(--text-muted); font-size: 0.92rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <header>
+    <div class="logo-wrap"><div class="logo">Vulpes Oculus</div></div>
+    <nav>
+      <a href="index.html">Start</a>
+      <a href="news.html">News</a>
+      <a href="events.html">Events</a>
+      <a href="kalender.html">Calendar</a>
+      <a href="wiki.html">Wiki</a>
+      <a href="bibliothek.html">Library</a>
+      <a href="voelker.html">Races</a>
+      <a href="berufe.html" class="active">Professions</a>
+      <a href="kreaturen.html">Creatures</a>
+      <a href="regeln.html">Rules</a>
+      <a href="goetter.html">Gods</a>
+      <a href="karte.html">Map</a>
+      <a href="charakterbogen.html">Character Sheet</a>
+      <a href="heilerakte.html">Healer Records</a>
+      <a href="wetter.html" id="navWeather" data-admin-only style="display:none;">Weather</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Professions & Handwerk</h1>
+    <p class="page-desc">Übersicht aller Handwerke und Tätigkeiten. Neue Einträge erscheinen automatisch im Character Sheet.</p>
+
+    <section class="admin-panel" id="adminPanel" style="display:none;">
+      <div class="admin-form">
+        <h2 id="formTitle" data-testid="berufe-form-title">Neuen Beruf anlegen</h2>
+        <div class="admin-grid">
+          <div class="admin-field"><label>Name *</label><input id="fName" data-testid="berufe-input-name" placeholder="z. B. Alchemist"></div>
+          <div class="admin-field"><label>Kategorie</label>
+            <select id="fCategory" data-testid="berufe-input-category">
+              <option value="Hauptberuf">Hauptberuf</option>
+              <option value="Nebenberuf">Nebenberuf</option>
+            </select>
+          </div>
+          <div class="admin-field full"><label>Beschreibung</label><textarea id="fDesc" data-testid="berufe-input-desc"></textarea></div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn" id="btnSave" data-testid="berufe-save-btn">Save</button>
+          <button class="btn secondary" id="btnCancel" data-testid="berufe-cancel-btn" style="display:none;">Abbrechen</button>
+          <span class="admin-status" id="status"></span>
+        </div>
+      </div>
+      <h2 class="admin-sub-title">Vorhandene Professions</h2>
+    </section>
+
+    <div class="tiles" id="tiles"></div>
+  </main>
+
+  <footer><p>© 2026 Kiyasha · Vulpes Oculus – Alle Rechte vorbehalten · <a href="#" class="legal-link" onclick="openLegalNotice(); return false;">Hinweis</a></p></footer>
+
+  <script src="vulpesoculus-auth.js"></script>
+  <script src="vulpesoculus-storage.js"></script>
+  <script src="vulpesoculus-data.js"></script>
+  <script>
+    const KEY = "berufe";
+    const esc = Vulpes OculusData.esc;
+    let editIndex = null;
+    const el = id => document.getElementById(id);
+    function admin() { return Vulpes OculusData.isAdmin(); }
+
+    function render() {
+      const list = Vulpes OculusData.load(KEY);
+      el("adminPanel").style.display = admin() ? "block" : "none";
+      el("tiles").innerHTML = list.map((j, i) => `
+        <article class="tile">
+          <span class="cat-badge">${esc(j.category || "Beruf")}</span>
+          <h3>${esc(j.name)}</h3>
+          <p class="muted">${esc(j.description || "Keine Beschreibung")}</p>
+          ${admin() ? `<div class="tile-actions">
+            <button class="btn secondary" data-edit="${i}" data-testid="berufe-edit-${i}">Edit</button>
+            <button class="btn danger" data-del="${i}" data-testid="berufe-delete-${i}">Delete</button>
+          </div>` : ""}
+        </article>`).join("");
+      el("tiles").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => startEdit(+b.dataset.edit));
+      el("tiles").querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(+b.dataset.del));
+    }
+
+    function resetForm() {
+      editIndex = null;
+      el("fName").value = ""; el("fCategory").value = "Hauptberuf"; el("fDesc").value = "";
+      el("formTitle").textContent = "Neuen Beruf anlegen";
+      el("btnSave").textContent = "Save";
+      el("btnCancel").style.display = "none";
+      el("status").textContent = "";
+    }
+
+    function startEdit(i) {
+      const j = Vulpes OculusData.load(KEY)[i];
+      if (!j) return;
+      editIndex = i;
+      el("fName").value = j.name || ""; el("fCategory").value = j.category || "Hauptberuf"; el("fDesc").value = j.description || "";
+      el("formTitle").textContent = "Beruf bearbeiten";
+      el("btnSave").textContent = "Änderungen speichern";
+      el("btnCancel").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function remove(i) {
+      if (!confirm("Diesen Beruf wirklich löschen?")) return;
+      const list = Vulpes OculusData.load(KEY);
+      list.splice(i, 1);
+      Vulpes OculusData.save(KEY, list);
+      if (editIndex === i) resetForm();
+      render();
+    }
+
+    function save() {
+      const name = el("fName").value.trim();
+      if (!name) { el("status").style.color = "#f87171"; el("status").textContent = "Bitte einen Namen eingeben."; return; }
+      const list = Vulpes OculusData.load(KEY);
+      const entry = { name, category: el("fCategory").value, description: el("fDesc").value.trim() };
+      if (editIndex !== null && list[editIndex]) list[editIndex] = entry; else list.push(entry);
+      Vulpes OculusData.save(KEY, list);
+      resetForm();
+      el("status").style.color = "#22c55e";
+      el("status").textContent = "✓ Gespeichert";
+      render();
+      setTimeout(() => { el("status").textContent = ""; }, 2500);
+    }
+
+    el("btnSave").onclick = save;
+    el("btnCancel").onclick = resetForm;
+    render();
+    window.addEventListener("storage", render);
+    document.addEventListener("vulpesoculus-data-synced", render);
+  </script>
+<script src="legal-notice.js"></script>
+</body>
+</html>
