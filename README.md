@@ -1,7 +1,5 @@
 # Vulpes Oculus
 
-[![Join the Vulpes Oculus Discord](https://cdn.prod.website-files.com/6257d5a7f8f5b9f7f8c4c4b/6257d5a7f8f5b9f7f8c4c4b_discord-logo.png)](https://discord.gg/FmsF4rmwqG)
-
 [**Join the Vulpes Oculus Discord Community**](https://discord.gg/FmsF4rmwqG)
 
 **Vulpes Oculus** is a browser-based roleplay platform: character sheets, wiki, calendar, events, races, professions, gods, creatures, rules, map, weather, healer records, and admin tools.
